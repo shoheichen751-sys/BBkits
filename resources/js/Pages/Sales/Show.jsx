@@ -531,6 +531,86 @@ export default function Show({ sale }) {
                                     </div>
                                 </div>
 
+                                {/* Delivery Address */}
+                                <div className="detail-card animate-fade-in">
+                                    <div className="section-title">
+                                        <div className="section-icon">
+                                            📦
+                                        </div>
+                                        <h3 className="text-lg font-bold text-gray-800">
+                                            Endereço de Entrega
+                                        </h3>
+                                    </div>
+                                    
+                                    {sale.delivery_address ? (
+                                        // Address is provided
+                                        <div className="space-y-4">
+                                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-green-500 text-lg">✅</span>
+                                                    <span className="font-medium text-green-800">Endereço Confirmado pelo Cliente</span>
+                                                </div>
+                                                <p className="text-green-700 text-sm">
+                                                    Cliente preencheu o endereço de entrega completo.
+                                                </p>
+                                            </div>
+                                            
+                                            <div className="detail-item">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full flex items-center justify-center text-white font-bold">
+                                                        🏠
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <dt className="text-sm text-gray-500 font-medium">Endereço Completo</dt>
+                                                        <dd className="text-lg font-bold text-gray-900 mb-1">
+                                                            {sale.delivery_address}, {sale.delivery_number}
+                                                        </dd>
+                                                        {sale.delivery_complement && (
+                                                            <dd className="text-sm text-gray-600 mb-1">
+                                                                {sale.delivery_complement}
+                                                            </dd>
+                                                        )}
+                                                        <dd className="text-sm text-gray-600">
+                                                            {sale.delivery_neighborhood} - {sale.delivery_city}/{sale.delivery_state}
+                                                        </dd>
+                                                        <dd className="text-sm text-gray-600 font-mono">
+                                                            CEP: {sale.delivery_zipcode}
+                                                        </dd>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // Address not provided yet
+                                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <span className="text-amber-500 text-2xl">⚠️</span>
+                                                <div>
+                                                    <h4 className="font-bold text-amber-800">Endereço Pendente</h4>
+                                                    <p className="text-amber-700 text-sm">
+                                                        Cliente ainda não preencheu o endereço de entrega.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-amber-100 border border-amber-300 rounded-lg p-3">
+                                                <p className="text-sm text-amber-800">
+                                                    <strong>📋 Próximos passos:</strong><br />
+                                                    • Cliente receberá link para preencher endereço<br />
+                                                    • Endereço é obrigatório para finalizar pedido<br />
+                                                    • Status será atualizado quando cliente completar
+                                                </p>
+                                            </div>
+                                            {sale.unique_token && (
+                                                <div className="mt-3 pt-3 border-t border-amber-300">
+                                                    <p className="text-xs text-amber-700">
+                                                        <strong>Link do cliente:</strong> /pedido/{sale.unique_token}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Financial Details */}
                                 <div className="detail-card animate-fade-in">
                                     <div className="section-title">
