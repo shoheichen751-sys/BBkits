@@ -1,7 +1,84 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
+import Modal from '@/Components/Modal';
+import TextInput from '@/Components/TextInput';
+import InputLabel from '@/Components/InputLabel';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import DangerButton from '@/Components/DangerButton';
 
 export default function Index({ auth, fonts, filters }) {
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedFont, setSelectedFont] = useState(null);
+    
+    const { data, setData, post, put, delete: destroy, processing, errors, reset } = useForm({
+        name: '',
+        display_name: '',
+        description: '',
+        preview_image: '',
+        additional_cost: '0',
+        is_active: true,
+        sort_order: 0,
+    });
+    
+    const openAddModal = () => {
+        reset();
+        setShowAddModal(true);
+    };
+    
+    const openEditModal = (font) => {
+        setSelectedFont(font);
+        setData({
+            name: font.name,
+            display_name: font.display_name,
+            description: font.description || '',
+            preview_image: font.preview_image || '',
+            additional_cost: font.additional_cost,
+            is_active: font.is_active,
+            sort_order: font.sort_order,
+        });
+        setShowEditModal(true);
+    };
+    
+    const openDeleteModal = (font) => {
+        setSelectedFont(font);
+        setShowDeleteModal(true);
+    };
+    
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        post('/admin/embroidery/fonts', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowAddModal(false);
+                reset();
+            },
+        });
+    };
+    
+    const handleUpdate = (e) => {
+        e.preventDefault();
+        put(`/admin/embroidery/fonts/${selectedFont.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowEditModal(false);
+                reset();
+            },
+        });
+    };
+    
+    const handleDelete = () => {
+        destroy(`/admin/embroidery/fonts/${selectedFont.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowDeleteModal(false);
+                setSelectedFont(null);
+            },
+        });
+    };
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -24,7 +101,10 @@ export default function Index({ auth, fonts, filters }) {
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 bg-white border-b border-gray-200">
                             <div className="mb-4">
-                                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                <button 
+                                    onClick={openAddModal}
+                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                >
                                     + Adicionar Nova Fonte
                                 </button>
                             </div>
@@ -73,10 +153,16 @@ export default function Index({ auth, fonts, filters }) {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <button className="text-indigo-600 hover:text-indigo-900 mr-2">
+                                                        <button 
+                                                            onClick={() => openEditModal(font)}
+                                                            className="text-indigo-600 hover:text-indigo-900 mr-2"
+                                                        >
                                                             Editar
                                                         </button>
-                                                        <button className="text-red-600 hover:text-red-900">
+                                                        <button 
+                                                            onClick={() => openDeleteModal(font)}
+                                                            className="text-red-600 hover:text-red-900"
+                                                        >
                                                             Excluir
                                                         </button>
                                                     </td>
@@ -95,6 +181,139 @@ export default function Index({ auth, fonts, filters }) {
                     </div>
                 </div>
             </div>
+            {/* Add Font Modal */}
+            <Modal show={showAddModal} onClose={() => setShowAddModal(false)}>
+                <form onSubmit={handleSubmit} className="p-6">
+                    <h2 className="text-lg font-medium text-gray-900 mb-6">Adicionar Nova Fonte</h2>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <InputLabel value="Nome da Fonte" />
+                            <TextInput
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                className="mt-1 block w-full"
+                                placeholder="arial"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <InputLabel value="Nome para Exibição" />
+                            <TextInput
+                                value={data.display_name}
+                                onChange={(e) => setData('display_name', e.target.value)}
+                                className="mt-1 block w-full"
+                                placeholder="Arial"
+                                required
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <InputLabel value="Custo Adicional (R$)" />
+                            <TextInput
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.additional_cost}
+                                onChange={(e) => setData('additional_cost', e.target.value)}
+                                className="mt-1 block w-full"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="flex items-center mt-6">
+                                <input
+                                    type="checkbox"
+                                    checked={data.is_active}
+                                    onChange={(e) => setData('is_active', e.target.checked)}
+                                    className="rounded"
+                                />
+                                <span className="ml-2">Fonte Ativa</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2">
+                        <SecondaryButton onClick={() => setShowAddModal(false)}>Cancelar</SecondaryButton>
+                        <PrimaryButton type="submit" disabled={processing}>Salvar</PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Edit Font Modal */}
+            <Modal show={showEditModal} onClose={() => setShowEditModal(false)}>
+                <form onSubmit={handleUpdate} className="p-6">
+                    <h2 className="text-lg font-medium text-gray-900 mb-6">Editar Fonte</h2>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <InputLabel value="Nome da Fonte" />
+                            <TextInput
+                                value={data.name}
+                                onChange={(e) => setData('name', e.target.value)}
+                                className="mt-1 block w-full"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <InputLabel value="Nome para Exibição" />
+                            <TextInput
+                                value={data.display_name}
+                                onChange={(e) => setData('display_name', e.target.value)}
+                                className="mt-1 block w-full"
+                                required
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <InputLabel value="Custo Adicional (R$)" />
+                            <TextInput
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.additional_cost}
+                                onChange={(e) => setData('additional_cost', e.target.value)}
+                                className="mt-1 block w-full"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="flex items-center mt-6">
+                                <input
+                                    type="checkbox"
+                                    checked={data.is_active}
+                                    onChange={(e) => setData('is_active', e.target.checked)}
+                                    className="rounded"
+                                />
+                                <span className="ml-2">Fonte Ativa</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2">
+                        <SecondaryButton onClick={() => setShowEditModal(false)}>Cancelar</SecondaryButton>
+                        <PrimaryButton type="submit" disabled={processing}>Atualizar</PrimaryButton>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Delete Font Modal */}
+            <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+                <div className="p-6">
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Excluir Fonte</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                        Tem certeza de que deseja excluir a fonte "{selectedFont?.name}"?
+                    </p>
+                    <div className="flex justify-end space-x-2">
+                        <SecondaryButton onClick={() => setShowDeleteModal(false)}>Cancelar</SecondaryButton>
+                        <DangerButton onClick={handleDelete} disabled={processing}>Excluir</DangerButton>
+                    </div>
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     );
 }
