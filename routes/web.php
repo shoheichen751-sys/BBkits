@@ -9,6 +9,8 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\CommissionRangeController;
 use App\Http\Controllers\FineController;
+use App\Http\Controllers\EmbroideryController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -149,6 +151,8 @@ Route::middleware(['auth', 'approved'])->group(function () {
 
     Route::get('/sales/create-expanded', [SaleController::class, 'createExpanded'])->name('sales.create-expanded');
     Route::get('/sales/create-preview', [SaleController::class, 'createWithPreview'])->name('sales.create-preview');
+    Route::get('/sales/create-products', [SaleController::class, 'createWithProducts'])->name('sales.create-products');
+    Route::post('/sales/store-products', [SaleController::class, 'storeWithProducts'])->name('sales.store-products');
     Route::get('/sales/kanban', [SaleController::class, 'kanban'])->name('sales.kanban');
     Route::patch('/sales/{sale}/status', [SaleController::class, 'updateStatus'])->name('sales.update-status');
     Route::resource('sales', SaleController::class);
@@ -217,6 +221,33 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::put('/admin/users/{user}/reject', [AdminController::class, 'rejectUser'])->name('admin.users.reject');
         Route::put('/admin/sales/{sale}/correct', [SaleController::class, 'correct'])->name('admin.sales.correct');
         Route::put('/admin/sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('admin.sales.cancel');
+
+        // Embroidery Management Routes
+        Route::get('/admin/embroidery', [EmbroideryController::class, 'dashboard'])->name('admin.embroidery.dashboard');
+        
+        // Fonts
+        Route::get('/admin/embroidery/fonts', [EmbroideryController::class, 'fonts'])->name('admin.embroidery.fonts.index');
+        Route::post('/admin/embroidery/fonts', [EmbroideryController::class, 'storeFont'])->name('admin.embroidery.fonts.store');
+        Route::put('/admin/embroidery/fonts/{font}', [EmbroideryController::class, 'updateFont'])->name('admin.embroidery.fonts.update');
+        Route::delete('/admin/embroidery/fonts/{font}', [EmbroideryController::class, 'destroyFont'])->name('admin.embroidery.fonts.destroy');
+        
+        // Colors
+        Route::get('/admin/embroidery/colors', [EmbroideryController::class, 'colors'])->name('admin.embroidery.colors.index');
+        Route::post('/admin/embroidery/colors', [EmbroideryController::class, 'storeColor'])->name('admin.embroidery.colors.store');
+        Route::put('/admin/embroidery/colors/{color}', [EmbroideryController::class, 'updateColor'])->name('admin.embroidery.colors.update');
+        Route::delete('/admin/embroidery/colors/{color}', [EmbroideryController::class, 'destroyColor'])->name('admin.embroidery.colors.destroy');
+        
+        // Positions
+        Route::get('/admin/embroidery/positions', [EmbroideryController::class, 'positions'])->name('admin.embroidery.positions.index');
+        Route::post('/admin/embroidery/positions', [EmbroideryController::class, 'storePosition'])->name('admin.embroidery.positions.store');
+        Route::put('/admin/embroidery/positions/{position}', [EmbroideryController::class, 'updatePosition'])->name('admin.embroidery.positions.update');
+        Route::delete('/admin/embroidery/positions/{position}', [EmbroideryController::class, 'destroyPosition'])->name('admin.embroidery.positions.destroy');
+
+        // Products Management
+        Route::get('/admin/products', [ProductController::class, 'index'])->name('admin.products.index');
+        Route::post('/admin/products', [ProductController::class, 'store'])->name('admin.products.store');
+        Route::put('/admin/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
+        Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
     });
 
     Route::get('/reports/sales', [SaleController::class, 'generateSalesReport'])->name('reports.sales');
@@ -230,6 +261,18 @@ Route::middleware(['auth', 'approved'])->group(function () {
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('test-pdf');
         return $pdf->download('test-bbkits.pdf');
     })->name('test.pdf');
+
+    // API routes for products (for use in sales forms)
+    Route::middleware(['auth', 'approved'])->group(function () {
+        Route::get('/api/products', [ProductController::class, 'apiIndex'])->name('api.products.index');
+        Route::get('/api/products/{product}', [ProductController::class, 'show'])->name('api.products.show');
+        Route::get('/api/products/{product}/compatible-positions', [EmbroideryController::class, 'apiProductCompatiblePositions'])->name('api.products.compatible-positions');
+        
+        Route::get('/api/embroidery/fonts', [EmbroideryController::class, 'apiFonts'])->name('api.embroidery.fonts');
+        Route::get('/api/embroidery/colors', [EmbroideryController::class, 'apiColors'])->name('api.embroidery.colors');
+        Route::get('/api/embroidery/positions', [EmbroideryController::class, 'apiPositions'])->name('api.embroidery.positions');
+        Route::post('/api/embroidery/calculate-price', [EmbroideryController::class, 'apiCalculateEmbroideryPrice'])->name('api.embroidery.calculate-price');
+    });
     
     // API endpoint for checking approval status
     Route::get('/api/check-approval-status', function () {

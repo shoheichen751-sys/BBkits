@@ -201,6 +201,29 @@ class Sale extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    public function saleProducts()
+    {
+        return $this->hasMany(SaleProduct::class);
+    }
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'sale_products')
+                    ->withPivot([
+                        'quantity', 
+                        'size', 
+                        'product_color', 
+                        'unit_price',
+                        'has_embroidery',
+                        'embroidery_text',
+                        'embroidery_font_id',
+                        'embroidery_color_id',
+                        'embroidery_position',
+                        'embroidery_cost'
+                    ])
+                    ->withTimestamps();
+    }
+
     public function getCommissionBaseAmount(): float
     {
         // If sale has payment records, use the approved payments total

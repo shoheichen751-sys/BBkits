@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
+use App\Models\Product;
+use App\Models\SaleProduct;
+use App\Models\EmbroideryFont;
+use App\Models\EmbroideryColor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +53,20 @@ class SaleController extends Controller
     public function createWithPreview()
     {
         return Inertia::render('Sales/CreateWithPreview');
+    }
+
+    public function createWithProducts()
+    {
+        // Load all active products with embroidery options
+        $products = Product::active()->orderBy('category')->orderBy('name')->get();
+        $fonts = EmbroideryFont::active()->ordered()->get();
+        $colors = EmbroideryColor::active()->ordered()->get();
+        
+        return Inertia::render('Sales/CreateWithProducts', [
+            'products' => $products,
+            'fonts' => $fonts,
+            'colors' => $colors,
+        ]);
     }
 
     public function kanban()
@@ -177,12 +195,168 @@ class SaleController extends Controller
         return redirect()->route('sales.index')->with('message', 'Venda registrada com sucesso!');
     }
 
+    public function storeWithProducts(Request $request)
+    {
+        $validated = $request->validate([
+            // Client info - REQUIRED
+            'client_name' => 'required|string|max:255',
+            'client_email' => 'nullable|email|max:255',
+            'client_phone' => 'required|string|max:20',
+            'client_cpf' => 'nullable|string|max:14',
+            
+            // Child name - REQUIRED
+            'child_name' => 'required|string|max:255',
+            
+            // Products - REQUIRED (array of products)
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.size' => 'nullable|string|max:50',
+            'products.*.product_color' => 'nullable|string|max:50',
+            'products.*.unit_price' => 'required|numeric|min:0',
+            
+            // Embroidery per product (optional)
+            'products.*.has_embroidery' => 'boolean',
+            'products.*.embroidery_text' => 'nullable|string|max:255',
+            'products.*.embroidery_font_id' => 'nullable|exists:embroidery_fonts,id',
+            'products.*.embroidery_color_id' => 'nullable|exists:embroidery_colors,id',
+            'products.*.embroidery_position' => 'nullable|string|max:100',
+            'products.*.embroidery_cost' => 'nullable|numeric|min:0',
+            
+            // Payment - REQUIRED
+            'total_amount' => 'required|numeric|min:0',
+            'shipping_amount' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:pix,boleto,cartao,dinheiro',
+            'received_amount' => 'required|numeric|min:0',
+            'payment_date' => 'required|date',
+            'payment_receipt' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            
+            // Delivery address - REQUIRED
+            'delivery_address' => 'required|string|max:255',
+            'delivery_number' => 'nullable|string|max:20',
+            'delivery_complement' => 'nullable|string|max:100',
+            'delivery_neighborhood' => 'nullable|string|max:100',
+            'delivery_city' => 'required|string|max:100',
+            'delivery_state' => 'required|string|size:2',
+            'delivery_zipcode' => 'required|string|regex:/^\d{5}-?\d{3}$/',
+            
+            // Optional
+            'notes' => 'nullable|string',
+            'preferred_delivery_date' => 'nullable|date'
+        ]);
+
+        DB::beginTransaction();
+        
+        try {
+            // Handle payment receipt
+            if ($request->hasFile('payment_receipt')) {
+                $file = $request->file('payment_receipt');
+                $fileContent = file_get_contents($file->getRealPath());
+                $mimeType = $file->getMimeType();
+                
+                // Store as base64 data URL
+                $validated['receipt_data'] = 'data:' . $mimeType . ';base64,' . base64_encode($fileContent);
+                $validated['initial_payment_proof_data'] = $validated['receipt_data'];
+                
+                // Still store the file path for backward compatibility
+                $validated['payment_receipt'] = $request->file('payment_receipt')->store('receipts', 'public');
+                $validated['initial_payment_proof'] = $validated['payment_receipt'];
+            }
+
+            // Extract products data and remove from main validated array
+            $productsData = $validated['products'];
+            unset($validated['products']);
+
+            // Set sale basic info
+            $validated['user_id'] = auth()->id();
+            $validated['status'] = 'pendente';
+            
+            // Set initial order status based on payment
+            if ($validated['received_amount'] >= $validated['total_amount']) {
+                $validated['order_status'] = 'pending_payment'; // Will be approved by finance
+            } else {
+                $validated['order_status'] = 'pending_payment'; // Partial payment
+            }
+
+            // Create the sale
+            $sale = Sale::create($validated);
+            
+            // Create sale products
+            foreach ($productsData as $productData) {
+                $saleProduct = SaleProduct::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $productData['product_id'],
+                    'quantity' => $productData['quantity'],
+                    'size' => $productData['size'] ?? null,
+                    'product_color' => $productData['product_color'] ?? null,
+                    'unit_price' => $productData['unit_price'],
+                    'has_embroidery' => $productData['has_embroidery'] ?? false,
+                    'embroidery_text' => $productData['embroidery_text'] ?? null,
+                    'embroidery_font_id' => $productData['embroidery_font_id'] ?? null,
+                    'embroidery_color_id' => $productData['embroidery_color_id'] ?? null,
+                    'embroidery_position' => $productData['embroidery_position'] ?? null,
+                    'embroidery_cost' => $productData['embroidery_cost'] ?? 0,
+                ]);
+            }
+            
+            DB::commit();
+            
+            $this->notificationService->notifyNewSale($sale);
+
+            // Send WhatsApp order confirmation automatically
+            if ($sale->client_phone) {
+                try {
+                    $whatsAppService = app(\App\Services\WhatsAppService::class);
+                    $whatsAppResult = $whatsAppService->sendOrderConfirmation($sale);
+                    
+                    if (!$whatsAppResult['success']) {
+                        Log::warning('WhatsApp order confirmation failed', [
+                            'sale_id' => $sale->id,
+                            'error' => $whatsAppResult['message']
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('WhatsApp service error during order creation', [
+                        'sale_id' => $sale->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // Return with personalized page URL if client email exists
+            if ($sale->client_email) {
+                return redirect()->route('sales.index')->with([
+                    'message' => 'Venda com produtos registrada com sucesso!',
+                    'client_url' => $sale->getPersonalizedPageUrl()
+                ]);
+            }
+
+            return redirect()->route('sales.index')->with('message', 'Venda com produtos registrada com sucesso!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating sale with products', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()->withErrors(['error' => 'Erro ao criar venda: ' . $e->getMessage()]);
+        }
+    }
+
     public function show(Sale $sale)
     {
         $this->authorize('view', $sale);
         
         return Inertia::render('Sales/Show', [
-            'sale' => $sale->load(['user', 'approvedBy', 'rejectedBy'])
+            'sale' => $sale->load([
+                'user', 
+                'approvedBy', 
+                'rejectedBy',
+                'saleProducts.product',
+                'saleProducts.embroideryFont',
+                'saleProducts.embroideryColor'
+            ])
         ]);
     }
 
