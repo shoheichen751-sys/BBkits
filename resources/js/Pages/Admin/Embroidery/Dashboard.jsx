@@ -67,7 +67,7 @@ export default function Dashboard({ auth, stats }) {
                     {/* Management Links */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <Link
-                            href="/admin/embroidery/fonts"
+                            href={route('admin.embroidery.fonts.index')}
                             className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 hover:bg-gray-50 transition-colors"
                         >
                             <div className="flex items-center">
@@ -84,7 +84,7 @@ export default function Dashboard({ auth, stats }) {
                         </Link>
 
                         <Link
-                            href="/admin/embroidery/colors"
+                            href={route('admin.embroidery.colors.index')}
                             className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 hover:bg-gray-50 transition-colors"
                         >
                             <div className="flex items-center">
@@ -101,7 +101,7 @@ export default function Dashboard({ auth, stats }) {
                         </Link>
 
                         <Link
-                            href="/admin/embroidery/positions"
+                            href={route('admin.embroidery.positions.index')}
                             className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 hover:bg-gray-50 transition-colors"
                         >
                             <div className="flex items-center">
@@ -119,7 +119,7 @@ export default function Dashboard({ auth, stats }) {
                         </Link>
 
                         <Link
-                            href="/admin/embroidery/designs"
+                            href={route('admin.embroidery.designs.index')}
                             className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 hover:bg-gray-50 transition-colors"
                         >
                             <div className="flex items-center">
@@ -136,7 +136,7 @@ export default function Dashboard({ auth, stats }) {
                         </Link>
 
                         <Link
-                            href="/admin/products"
+                            href={route('admin.products.index')}
                             className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 hover:bg-gray-50 transition-colors"
                         >
                             <div className="flex items-center">
