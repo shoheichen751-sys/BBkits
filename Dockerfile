@@ -102,8 +102,8 @@ CMD set -e && \
     echo "=== Ensuring Composer Dependencies ===" && \
     if [ ! -d "vendor" ] || [ ! -f "vendor/autoload.php" ]; then \
         echo "ERROR: Vendor directory missing! Installing composer dependencies..." && \
-        composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --verbose || exit 1; \
-        echo "Composer install completed" && \
+        composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --verbose || exit 1 && \
+        echo "Composer install completed"; \
     fi && \
     echo "Vendor directory verified ✓" && \
     ls -la vendor/ && \
