@@ -3,10 +3,10 @@ import { Head, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import SalesModal from '@/Components/SalesModal';
 import RankingDisplay from '@/Components/RankingDisplay';
-import { formatCurrency, formatCurrencyWithSymbol } from '@/utils/currency';
+import { formatBRL } from '@/utils/currency';
 
 export default function Dashboard() {
-    const { auth, gamification, salesData, recentSales, allMonthlySales } = usePage().props;
+    const { auth, gamification, salesData, recentSales, allMonthlySales, topPerformers } = usePage().props;
     const [modalOpen, setModalOpen] = useState(false);
     
     const handleViewSales = () => {
@@ -14,8 +14,9 @@ export default function Dashboard() {
     };
     
     // Debug log
-    console.log('Dashboard Props:', { salesData, recentSales });
+    console.log('Dashboard Props:', { salesData, recentSales, topPerformers });
     console.log('Recent Sales Length:', recentSales ? recentSales.length : 'null/undefined');
+    console.log('Top Performers:', topPerformers);
     
     return (
         <>
@@ -341,7 +342,7 @@ export default function Dashboard() {
                                         <div>
                                             <p className="mb-2 text-sm font-medium text-white/90">Total de Vendas</p>
                                             <p className="text-2xl font-bold drop-shadow-lg">
-                                                R$ {formatCurrency(salesData?.totalSalesAmount || 0)}
+                                                {formatBRL(salesData?.totalSalesAmount || 0)}
                                             </p>
                                             <p className="text-xs text-white/80 mt-1">💼 {salesData?.monthlySalesCount || 0} vendas cadastradas</p>
                                         </div>
@@ -358,7 +359,7 @@ export default function Dashboard() {
                                         <div>
                                             <p className="mb-2 text-sm font-medium text-white/90">Comissão do Mês</p>
                                             <p className="text-2xl font-bold drop-shadow-lg">
-                                                R$ {formatCurrency(salesData?.monthlyCommission || 0)}
+                                                {formatBRL(salesData?.monthlyCommission || 0)}
                                             </p>
                                             <p className="text-xs text-white/80 mt-1">💰 Seus ganhos</p>
                                         </div>
@@ -375,7 +376,7 @@ export default function Dashboard() {
                                         <div>
                                             <p className="mb-2 text-sm font-medium text-white/90">Vendas Aprovadas</p>
                                             <p className="text-2xl font-bold drop-shadow-lg">
-                                                R$ {formatCurrency(salesData?.approvedSalesTotal || 0)}
+                                                {formatBRL(salesData?.approvedSalesTotal || 0)}
                                             </p>
                                             <p className="text-xs text-white/80 mt-1">✅ {salesData?.approvedSalesCount || 0} aprovadas</p>
                                         </div>
@@ -392,7 +393,7 @@ export default function Dashboard() {
                                         <div>
                                             <p className="mb-2 text-sm font-medium text-white/90">Meta do Mês</p>
                                             <p className="text-2xl font-bold drop-shadow-lg">
-                                                R$ {formatCurrency(salesData?.monthlyGoal || 40000)}
+                                                {formatBRL(salesData?.monthlyGoal || 40000)}
                                             </p>
                                             <p className="text-xs text-white/80 mt-1">🎯 Objetivo</p>
                                         </div>
@@ -415,15 +416,15 @@ export default function Dashboard() {
                                     <div className="flex justify-between items-center mb-4">
                                         <p className="text-lg font-medium text-gray-700">{salesData?.progressPercentage || 0}% da meta mensal alcançada</p>
                                         <p className="text-sm text-gray-600 bg-white/70 px-3 py-1 rounded-full">
-                                            Meta: R$ {formatCurrency(salesData?.monthlyGoal || 40000)}
+                                            Meta: {formatBRL(salesData?.monthlyGoal || 40000)}
                                         </p>
                                     </div>
                                     <div className="mb-6">
                                         <p className="text-sm text-gray-600 mb-2">
-                                            Vendido: R$ {formatCurrency(salesData?.totalSalesAmount || 0)} de R$ {formatCurrency(salesData?.monthlyGoal || 40000)}
+                                            Vendido: {formatBRL(salesData?.totalSalesAmount || 0)} de {formatBRL(salesData?.monthlyGoal || 40000)}
                                         </p>
                                         <p className="text-sm text-gray-600">
-                                            Faltam: R$ {formatCurrency(Math.max(0, (salesData?.monthlyGoal || 40000) - (salesData?.totalSalesAmount || 0)))}
+                                            Faltam: {formatBRL(Math.max(0, (salesData?.monthlyGoal || 40000) - (salesData?.totalSalesAmount || 0)))}
                                         </p>
                                     </div>
                                     <div className="motivational-card p-6 rounded-2xl text-white relative overflow-hidden">
@@ -468,13 +469,13 @@ export default function Dashboard() {
                                             <p className="text-sm font-medium text-gray-600 mb-2">Próxima Faixa de Comissão</p>
                                             <div className="flex items-center justify-between mb-2">
                                                 <p className="text-lg font-semibold text-gray-800">
-                                                    R$ {formatCurrency(salesData.nextBracket.min_amount)}
+                                                    {formatBRL(salesData.nextBracket.min_amount)}
                                                 </p>
                                                 <p className="text-2xl font-bold text-purple-600">{salesData.nextBracket.percentage}%</p>
                                             </div>
                                             <p className="text-sm text-gray-600">
                                                 Faltam <span className="font-bold text-purple-600">
-                                                    R$ {formatCurrency(salesData.nextBracket.amount_needed)}
+                                                    {formatBRL(salesData.nextBracket.amount_needed)}
                                                 </span> para alcançar
                                             </p>
                                         </div>
@@ -489,13 +490,13 @@ export default function Dashboard() {
                                                     <p className="font-semibold text-green-800 mb-2">Simulação de Ganhos</p>
                                                     <p className="text-sm text-green-700 mb-1">
                                                         Comissão atual: <span className="font-bold">
-                                                            R$ {formatCurrency(salesData.potentialEarnings.current_commission)}
+                                                            {formatBRL(salesData.potentialEarnings.current_commission)}
                                                         </span>
                                                     </p>
                                                     <p className="text-sm text-green-700">
-                                                        Se vender mais <span className="font-bold">R$ {formatCurrency(salesData.nextBracket?.amount_needed || 0)}</span>, 
+                                                        Se vender mais <span className="font-bold">{formatBRL(salesData.nextBracket?.amount_needed || 0)}</span>, 
                                                         você ganhará <span className="font-bold text-green-600">
-                                                            +R$ {formatCurrency(salesData.potentialEarnings.additional_commission)}
+                                                            +{formatBRL(salesData.potentialEarnings.additional_commission)}
                                                         </span> de comissão!
                                                     </p>
                                                 </div>
@@ -511,8 +512,8 @@ export default function Dashboard() {
                                                 {salesData.commissionRanges.map((range, index) => (
                                                     <div key={index} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
                                                         <span className="text-sm text-gray-700">
-                                                            R$ {formatCurrency(range.min_amount)}
-                                                            {range.max_amount ? ` - R$ ${formatCurrency(range.max_amount)}` : '+'}
+                                                            {formatBRL(range.min_amount)}
+                                                            {range.max_amount ? ` - R$ ${formatBRL(range.max_amount)}` : '+'}
                                                         </span>
                                                         <span className="font-bold text-purple-600">{range.percentage}%</span>
                                                     </div>
@@ -536,7 +537,7 @@ export default function Dashboard() {
                                         <div className="flex justify-between items-center p-4 bg-white/50 rounded-lg border border-gray-200">
                                             <span className="text-sm font-medium text-gray-600">1. Total de Vendas</span>
                                             <span className="text-lg font-bold text-gray-800">
-                                                R$ {formatCurrency(salesData?.totalSalesAmount || 0)}
+                                                {formatBRL(salesData?.totalSalesAmount || 0)}
                                             </span>
                                         </div>
                                         
@@ -544,7 +545,7 @@ export default function Dashboard() {
                                         <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
                                             <span className="text-sm font-medium text-green-600">2. Vendas Aprovadas</span>
                                             <span className="text-lg font-bold text-green-800">
-                                                R$ {formatCurrency(salesData?.approvedSalesTotal || 0)}
+                                                {formatBRL(salesData?.approvedSalesTotal || 0)}
                                             </span>
                                         </div>
                                         
@@ -552,7 +553,7 @@ export default function Dashboard() {
                                         <div className="flex justify-between items-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                                             <span className="text-sm font-medium text-yellow-600">3. Vendas Pendentes</span>
                                             <span className="text-lg font-bold text-yellow-800">
-                                                R$ {formatCurrency(salesData?.pendingSalesTotal || 0)}
+                                                {formatBRL(salesData?.pendingSalesTotal || 0)}
                                             </span>
                                         </div>
                                         
@@ -560,7 +561,7 @@ export default function Dashboard() {
                                         <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                                             <span className="text-sm font-medium text-blue-600">4. Total de Frete</span>
                                             <span className="text-lg font-bold text-blue-800">
-                                                R$ {formatCurrency(salesData?.totalShipping || 0)}
+                                                {formatBRL(salesData?.totalShipping || 0)}
                                             </span>
                                         </div>
                                         
@@ -568,7 +569,7 @@ export default function Dashboard() {
                                         <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                                             <span className="text-sm font-medium text-purple-600">5. Base de Comissão</span>
                                             <span className="text-lg font-bold text-purple-800">
-                                                R$ {formatCurrency(salesData?.commissionBase || 0)}
+                                                {formatBRL(salesData?.commissionBase || 0)}
                                             </span>
                                         </div>
                                         
@@ -576,7 +577,7 @@ export default function Dashboard() {
                                         <div className="flex justify-between items-center p-4 bg-orange-50 rounded-lg border border-orange-200">
                                             <span className="text-sm font-medium text-orange-600">6. Comissão Total ({salesData?.currentRate || 0}%)</span>
                                             <span className="text-lg font-bold text-orange-800">
-                                                R$ {formatCurrency(salesData?.monthlyCommission || 0)}
+                                                {formatBRL(salesData?.monthlyCommission || 0)}
                                             </span>
                                         </div>
                                         
@@ -615,12 +616,12 @@ export default function Dashboard() {
                                                             <span className="font-medium text-gray-800">{sale.client_name}</span>
                                                         </div>
                                                         <p className="text-sm text-gray-600 mt-1">
-                                                            Recebido: R$ {formatCurrency(sale.received_amount || 0)} • {new Date(sale.payment_date).toLocaleDateString('pt-BR')}
+                                                            Recebido: {formatBRL(sale.received_amount || 0)} • {new Date(sale.payment_date).toLocaleDateString('pt-BR')}
                                                         </p>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="font-bold text-gray-800">
-                                                            R$ {formatCurrency(sale.total_amount || 0)}
+                                                            {formatBRL(sale.total_amount || 0)}
                                                         </p>
                                                         <span className={`text-xs px-2 py-1 rounded-full ${
                                                             sale.status === 'aprovado' ? 'bg-green-100 text-green-800' :
@@ -708,9 +709,13 @@ export default function Dashboard() {
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-5xl font-bold drop-shadow-lg">
-                                                    {Math.round(gamification.level.progress)}%
+                                                    {gamification.level.progress}%
                                                 </div>
                                                 <div className="text-lg text-white/80">Progresso para próximo nível</div>
+                                                {/* Debug info - can be removed later */}
+                                                <div className="text-xs text-white/60 mt-2">
+                                                    Progresso Geral: {gamification.level.overallProgress}%
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="w-full bg-white/20 rounded-full h-4 mb-4 shadow-inner relative z-10">
@@ -718,6 +723,44 @@ export default function Dashboard() {
                                                 className="level-progress h-4 rounded-full shadow-lg" 
                                                 style={{width: `${gamification.level.progress}%`}}
                                             ></div>
+                                        </div>
+                                        
+                                        {/* Performance Breakdown */}
+                                        <div className="mt-6 bg-white/10 rounded-lg p-4 relative z-10">
+                                            <h4 className="text-lg font-semibold mb-3 text-white/90">📊 Detalhes do Progresso</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                <div className="bg-white/5 rounded-lg p-3">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-white/80">Vendas do Mês:</span>
+                                                        <span className="font-semibold text-white">{gamification.level.salesProgress}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-white/20 rounded-full h-2">
+                                                        <div 
+                                                            className="bg-white h-2 rounded-full"
+                                                            style={{width: `${Math.min(100, gamification.level.salesProgress)}%`}}
+                                                        ></div>
+                                                    </div>
+                                                    <div className="text-xs text-white/60 mt-1">
+                                                        {formatBRL(gamification.level.currentSales)} / {formatBRL(gamification.level.salesGoal)}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="bg-white/5 rounded-lg p-3">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-white/80">Comissão do Mês:</span>
+                                                        <span className="font-semibold text-white">{gamification.level.commissionProgress}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-white/20 rounded-full h-2">
+                                                        <div 
+                                                            className="bg-white h-2 rounded-full"
+                                                            style={{width: `${Math.min(100, gamification.level.commissionProgress)}%`}}
+                                                        ></div>
+                                                    </div>
+                                                    <div className="text-xs text-white/60 mt-1">
+                                                        {formatBRL(gamification.level.currentCommission)} / {formatBRL(gamification.level.commissionGoal)}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -765,6 +808,37 @@ export default function Dashboard() {
                                                 currentUser={auth.user}
                                                 showFull={false}
                                             />
+                                        </div>
+                                    )}
+                                    
+                                    {/* Top Vendedoras Ranking - For Motivation */}
+                                    {topPerformers && topPerformers.length > 0 && (
+                                        <div className="mb-8 animate-fadeInUp">
+                                            <div className="card-gradient p-8 relative z-10">
+                                                <div className="flex items-center mb-6">
+                                                    <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
+                                                        <span className="text-2xl">🏆</span>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-2xl font-bold text-gray-800">Top Vendedoras do Mês</h4>
+                                                        <p className="text-gray-600 text-sm">Inspiração para alcançar novos patamares!</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <RankingDisplay 
+                                                    ranking={gamification.ranking}
+                                                    currentUser={auth.user}
+                                                    showFull={true}
+                                                />
+                                                
+                                                {/* Motivational Message */}
+                                                <div className="mt-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 border-l-4 border-pink-400">
+                                                    <p className="text-sm text-gray-700">
+                                                        <span className="font-semibold">💪 Você consegue!</span> Cada venda é um passo mais próximo do topo. 
+                                                        Continue se esforçando e inspire outras vendedoras! ✨
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </>

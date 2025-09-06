@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Brazilian Currency Formatting</title>
+</head>
+<body>
+    <h1>Test Brazilian Currency Formatting</h1>
+    <input type="text" id="currencyInput" placeholder="Digite um valor..." />
+    <div id="result"></div>
+
+    <script>
+        const formatBrazilianCurrency = (value) => {
+            // Remove all non-digits first
+            const cleaned = value.replace(/[^\d]/g, '');
+            // Convert to number and divide by 100 to handle cents
+            const number = parseFloat(cleaned) / 100;
+            // Format with comma as decimal separator
+            return number.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        };
+
+        const parseBrazilianCurrency = (value) => {
+            // Convert Brazilian format (123,45) to US format (123.45)
+            return value.replace(/\./g, '').replace(',', '.');
+        };
+
+        document.getElementById('currencyInput').addEventListener('input', function(e) {
+            const formatted = formatBrazilianCurrency(e.target.value);
+            const parsed = parseBrazilianCurrency(formatted);
+            
+            document.getElementById('result').innerHTML = `
+                <p><strong>Formatted:</strong> ${formatted}</p>
+                <p><strong>Parsed:</strong> ${parsed}</p>
+                <p><strong>Test values:</strong></p>
+                <ul>
+                    <li>29990 → ${formatBrazilianCurrency('29990')} → ${parseBrazilianCurrency(formatBrazilianCurrency('29990'))}</li>
+                    <li>12345 → ${formatBrazilianCurrency('12345')} → ${parseBrazilianCurrency(formatBrazilianCurrency('12345'))}</li>
+                    <li>500 → ${formatBrazilianCurrency('500')} → ${parseBrazilianCurrency(formatBrazilianCurrency('500'))}</li>
+                </ul>
+            `;
+            
+            e.target.value = formatted;
+        });
+    </script>
+</body>
+</html>

@@ -337,6 +337,21 @@ export default function Show({ sale }) {
                     margin-top: 16px;
                 }
 
+                .pending-amount-highlight {
+                    background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+                    border: 2px solid #FED7AA;
+                    border-radius: 15px;
+                    padding: 16px;
+                    text-align: center;
+                    margin-top: 16px;
+                    transition: all 0.3s ease;
+                }
+
+                .pending-amount-highlight:hover {
+                    transform: scale(1.02);
+                    box-shadow: 0 8px 25px rgba(251, 146, 60, 0.2);
+                }
+
                 .grid-enhanced {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -531,6 +546,70 @@ export default function Show({ sale }) {
                                     </div>
                                 </div>
 
+                                {/* Product Information */}
+                                {sale.product_category && (
+                                    <div className="detail-card animate-fade-in">
+                                        <div className="section-title">
+                                            <div className="section-icon">
+                                                🛍️
+                                            </div>
+                                            <h3 className="text-lg font-bold text-gray-800">
+                                                Informações do Produto
+                                            </h3>
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            {sale.product_category && (
+                                                <div className="detail-item">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+                                                            📂
+                                                        </div>
+                                                        <div>
+                                                            <dt className="text-sm text-gray-500 font-medium">Categoria</dt>
+                                                            <dd className="text-lg font-bold text-gray-900">
+                                                                {sale.product_category?.name || 'Não informado'}
+                                                            </dd>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {sale.product_size && (
+                                                <div className="detail-item">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full flex items-center justify-center text-white font-bold">
+                                                            📏
+                                                        </div>
+                                                        <div>
+                                                            <dt className="text-sm text-gray-500 font-medium">Tamanho</dt>
+                                                            <dd className="text-lg font-bold text-gray-900">
+                                                                {sale.product_size} ({sale.product_size === 'P' ? 'Pequeno' : sale.product_size === 'M' ? 'Médio' : sale.product_size === 'G' ? 'Grande' : 'Extra Grande'})
+                                                            </dd>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {sale.product_price && (
+                                                <div className="detail-item">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full flex items-center justify-center text-white font-bold">
+                                                            💰
+                                                        </div>
+                                                        <div>
+                                                            <dt className="text-sm text-gray-500 font-medium">Preço Base do Produto</dt>
+                                                            <dd className="text-lg font-bold text-gray-900">
+                                                                {formatCurrency(sale.product_price)}
+                                                            </dd>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Delivery Address */}
                                 <div className="detail-card animate-fade-in">
                                     <div className="section-title">
@@ -643,6 +722,21 @@ export default function Show({ sale }) {
                                                 <span className="text-2xl font-bold text-green-600">{formatCurrency(sale.received_amount)}</span>
                                             </div>
                                         </div>
+
+                                        {/* Pending Amount */}
+                                        {(parseFloat(sale.total_amount) + parseFloat(sale.shipping_amount || 0)) > parseFloat(sale.received_amount) && (
+                                            <div className="pending-amount-highlight">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-orange-600 font-bold">⏳ Valor Pendente</span>
+                                                    <span className="text-xl font-bold text-orange-600">
+                                                        {formatCurrency((parseFloat(sale.total_amount) + parseFloat(sale.shipping_amount || 0)) - parseFloat(sale.received_amount))}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-orange-500 mt-2">
+                                                    (Total com frete - valor recebido)
+                                                </p>
+                                            </div>
+                                        )}
 
                                         <div className="commission-highlight">
                                             <div className="flex justify-between items-center">

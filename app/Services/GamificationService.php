@@ -28,6 +28,16 @@ class GamificationService
         "Transforme cada conversa em uma oportunidade de ouro! 💰"
     ];
 
+    private array $dailyMotivationalQuotes = [
+        'Cada venda é uma história de amor que você ajuda a criar. Continue brilhando!', // Domingo
+        'Segunda-feira é o dia de novos começos! Que sua determinação seja maior que qualquer desafio!', // Segunda
+        'Terça-feira de conquistas! Cada "não" te aproxima do "sim" que vai transformar o dia!', // Terça
+        'Quarta-feira de foco total! Suas metas estão mais perto do que você imagina!', // Quarta
+        'Quinta-feira de gratidão! Celebre cada pequena vitória, elas constroem grandes sucessos!', // Quinta
+        'Sexta-feira de finalização! Termine a semana com chave de ouro e orgulho do seu trabalho!', // Sexta
+        'Sábado de reflexão e preparação! Você é mais forte do que pensa e mais capaz do que imagina!' // Sábado
+    ];
+
     private array $achievements = [
         'primeira_venda' => [
             'name' => 'Primeiro Passo',
@@ -76,6 +86,147 @@ class GamificationService
     public function getRandomMotivationalQuote(): string
     {
         return $this->motivationalQuotes[array_rand($this->motivationalQuotes)];
+    }
+
+    public function getDailyMotivationalQuote(): string
+    {
+        return $this->dailyMotivationalQuotes[date('w')];
+    }
+
+    public function getDetailedUserLevel(User $user): array
+    {
+        $currentYear = Carbon::now()->year;
+        $currentMonth = Carbon::now()->month;
+        
+        // Calculate monthly sales
+        $monthlySalesTotal = $user->sales()
+            ->where('status', 'aprovado')
+            ->whereYear('payment_date', $currentYear)
+            ->whereMonth('payment_date', $currentMonth)
+            ->get()
+            ->sum(function ($sale) {
+                if ($sale->hasPartialPayments()) {
+                    return $sale->getCommissionBaseAmountForPayments();
+                }
+                return ($sale->received_amount ?: 0) - ($sale->shipping_amount ?: 0);
+            });
+
+        // Calculate commission using CommissionService
+        $commissionService = new CommissionService();
+        $monthlyProgress = $commissionService->getMonthlyProgress($user, $currentMonth, $currentYear);
+        $monthlyCommission = $monthlyProgress['commission_total'];
+
+        // Define goals
+        $salesGoal = $user->monthly_goal ?: 40000;
+        $actualGoal = max($salesGoal, 40000);
+
+        // Calculate progress percentages
+        $salesGoalProgress = ($monthlySalesTotal / $actualGoal) * 100;
+        $commissionGoalProgress = ($monthlyCommission / 1000) * 100;
+        $overallProgress = ($salesGoalProgress + $commissionGoalProgress) / 2;
+
+        // Determine level based on overall progress
+        if ($overallProgress >= 100) {
+            $level = 5;
+            $icon = '👑';
+            $message = 'Rainha das Vendas - Você é inspiração para todas!';
+            $progressToNext = 100;
+        } elseif ($overallProgress >= 75) {
+            $level = 4;
+            $icon = '⭐';
+            $message = 'Vendedora Expert - Quase na realeza!';
+            $progressToNext = (($overallProgress - 75) / 25) * 100;
+        } elseif ($overallProgress >= 50) {
+            $level = 3;
+            $icon = '💎';
+            $message = 'Vendedora Avançada - Brilhando cada vez mais!';
+            $progressToNext = (($overallProgress - 50) / 25) * 100;
+        } elseif ($overallProgress >= 25) {
+            $level = 2;
+            $icon = '🌟';
+            $message = 'Vendedora Crescente - No caminho do sucesso!';
+            $progressToNext = (($overallProgress - 25) / 25) * 100;
+        } else {
+            $level = 1;
+            $icon = '🌱';
+            $message = 'Vendedora Iniciante - Pronta para brilhar!';
+            $progressToNext = ($overallProgress / 25) * 100;
+        }
+
+        return [
+            'level' => $level,
+            'icon' => $icon,
+            'message' => $message,
+            'progress' => round($progressToNext, 2),
+            'overallProgress' => round($overallProgress, 2),
+            'salesProgress' => round($salesGoalProgress, 2),
+            'commissionProgress' => round($commissionGoalProgress, 2),
+            'currentCommission' => $monthlyCommission,
+            'currentSales' => $monthlySalesTotal,
+            'salesGoal' => $actualGoal,
+            'commissionGoal' => 1000
+        ];
+    }
+
+    public function getTopPerformersForDashboard(): array
+    {
+        $currentYear = Carbon::now()->year;
+        $currentMonth = Carbon::now()->month;
+
+        $topPerformers = User::where('role', 'vendedora')
+            ->with(['sales' => function ($query) use ($currentYear, $currentMonth) {
+                $query->where('status', 'aprovado')
+                      ->whereYear('payment_date', $currentYear)
+                      ->whereMonth('payment_date', $currentMonth);
+            }])
+            ->get()
+            ->map(function ($user) {
+                $salesCount = $user->sales->count();
+                $totalRevenue = $user->sales->sum('received_amount');
+                
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'sales_count' => $salesCount,
+                    'total_revenue' => $totalRevenue
+                ];
+            })
+            ->sortByDesc('total_revenue')
+            ->take(10)
+            ->values();
+
+        return $topPerformers->map(function ($performer, $index) {
+            $position = $index + 1;
+            $user = User::find($performer['id']);
+            $level = $this->getUserLevel($user);
+            
+            return [
+                'position' => $position,
+                'user' => [
+                    'id' => $performer['id'],
+                    'name' => $performer['name'],
+                    'email' => $performer['email'],
+                    'role' => $performer['role']
+                ],
+                'monthly_total' => $performer['total_revenue'],
+                'monthly_sales_count' => $performer['sales_count'],
+                'level' => $level,
+                'badge' => $this->getPositionBadge($position),
+                'motivational_message' => $this->getPositionMotivationalMessage($position, $performer['total_revenue']),
+                'turnaround_alert' => null // Simplified for now
+            ];
+        })->toArray();
+    }
+
+    public function getUserPositionInRanking(User $user): ?int
+    {
+        $topPerformers = collect($this->getTopPerformersForDashboard());
+        
+        $userPerformer = $topPerformers->firstWhere('user.id', $user->id);
+        
+        return $userPerformer ? $userPerformer['position'] : null;
     }
 
     public function getUserLevel(User $user): array

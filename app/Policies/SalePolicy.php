@@ -33,7 +33,8 @@ class SalePolicy
 
     public function delete(User $user, Sale $sale): bool
     {
-        return $user->id === $sale->user_id && $sale->isPending();
+        // Only admin users can delete sales, regardless of ownership or status
+        return $user->isAdmin();
     }
 
     public function approve(User $user): bool

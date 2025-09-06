@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\EmbroideryFont;
 use App\Models\EmbroideryColor;
 use App\Models\EmbroideryPosition;
+use App\Models\EmbroideryDesign;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -24,6 +25,8 @@ class EmbroideryController extends Controller
             'active_colors' => EmbroideryColor::where('is_active', true)->count(),
             'total_positions' => EmbroideryPosition::count(),
             'active_positions' => EmbroideryPosition::where('is_active', true)->count(),
+            'total_designs' => EmbroideryDesign::count(),
+            'active_designs' => EmbroideryDesign::where('is_active', true)->count(),
             'total_products' => Product::count(),
             'embroidery_enabled_products' => Product::where('allows_embroidery', true)->count(),
         ];
@@ -292,6 +295,104 @@ class EmbroideryController extends Controller
         return redirect()->back()->with('success', 'Posição de bordado removida com sucesso!');
     }
 
+    public function designs(Request $request)
+    {
+        if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'financeiro') {
+            abort(403, 'Unauthorized');
+        }
+
+        $query = EmbroideryDesign::query();
+
+        if ($request->has('search') && $request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%')
+                  ->orWhere('category', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->has('category') && $request->category && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->has('status') && $request->status !== 'all') {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        $designs = $query->orderBy('sort_order')
+                        ->orderBy('name')
+                        ->paginate(15);
+
+        $categories = EmbroideryDesign::getCategories();
+
+        return Inertia::render('Admin/Embroidery/Designs/Index', [
+            'designs' => $designs,
+            'categories' => $categories,
+            'filters' => $request->only(['search', 'status', 'category']),
+        ]);
+    }
+
+    public function storeDesign(Request $request)
+    {
+        if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'financeiro') {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:embroidery_designs,slug',
+            'description' => 'nullable|string',
+            'category' => 'required|string|max:255',
+            'image_url' => 'nullable|string|max:500',
+            'design_file_url' => 'nullable|string|max:500',
+            'additional_cost' => 'required|numeric|min:0',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer|min:0',
+            'compatible_positions' => 'nullable|array',
+            'compatible_colors' => 'nullable|array',
+        ]);
+
+        $design = EmbroideryDesign::create($validated);
+
+        return redirect()->back()->with('success', 'Design de bordado criado com sucesso!');
+    }
+
+    public function updateDesign(Request $request, EmbroideryDesign $design)
+    {
+        if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'financeiro') {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:embroidery_designs,slug,' . $design->id,
+            'description' => 'nullable|string',
+            'category' => 'required|string|max:255',
+            'image_url' => 'nullable|string|max:500',
+            'design_file_url' => 'nullable|string|max:500',
+            'additional_cost' => 'required|numeric|min:0',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer|min:0',
+            'compatible_positions' => 'nullable|array',
+            'compatible_colors' => 'nullable|array',
+        ]);
+
+        $design->update($validated);
+
+        return redirect()->back()->with('success', 'Design de bordado atualizado com sucesso!');
+    }
+
+    public function destroyDesign(EmbroideryDesign $design)
+    {
+        if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'financeiro') {
+            abort(403, 'Unauthorized');
+        }
+
+        $design->delete();
+
+        return redirect()->back()->with('success', 'Design de bordado removido com sucesso!');
+    }
+
     // API methods for frontend forms
     public function apiFonts()
     {
@@ -311,6 +412,26 @@ class EmbroideryController extends Controller
         return response()->json($positions);
     }
 
+    public function apiDesigns()
+    {
+        $designs = EmbroideryDesign::active()->orderBy('sort_order')->orderBy('name')->get();
+        return response()->json($designs);
+    }
+
+    public function apiDesignsByCategory(Request $request)
+    {
+        $category = $request->get('category');
+        
+        $query = EmbroideryDesign::active()->orderBy('sort_order')->orderBy('name');
+        
+        if ($category) {
+            $query->byCategory($category);
+        }
+        
+        $designs = $query->get();
+        return response()->json($designs);
+    }
+
     public function apiProductCompatiblePositions(Product $product)
     {
         $positions = EmbroideryPosition::active()->ordered()->get();
@@ -326,31 +447,45 @@ class EmbroideryController extends Controller
     public function apiCalculateEmbroideryPrice(Request $request)
     {
         $validated = $request->validate([
+            'embroidery_type' => 'required|in:text,design,both',
             'font_id' => 'nullable|exists:embroidery_fonts,id',
             'color_id' => 'nullable|exists:embroidery_colors,id',
+            'design_id' => 'nullable|exists:embroidery_designs,id',
             'position' => 'nullable|string',
             'text' => 'nullable|string|max:255'
         ]);
 
         $totalCost = 0;
+        $fontCost = 0;
+        $colorCost = 0;
+        $designCost = 0;
 
-        if ($validated['font_id']) {
+        // Calculate font cost for text embroidery
+        if (($validated['embroidery_type'] === 'text' || $validated['embroidery_type'] === 'both') && $validated['font_id']) {
             $font = EmbroideryFont::find($validated['font_id']);
-            $totalCost += $font->additional_cost;
+            $fontCost = $font->additional_cost;
+            $totalCost += $fontCost;
         }
 
+        // Calculate color cost (applies to both text and design)
         if ($validated['color_id']) {
             $color = EmbroideryColor::find($validated['color_id']);
-            $totalCost += $color->additional_cost;
+            $colorCost = $color->additional_cost;
+            $totalCost += $colorCost;
         }
 
-        // You can add position-based pricing logic here if needed
-        // For now, we'll just return the font + color cost
+        // Calculate design cost for design embroidery
+        if (($validated['embroidery_type'] === 'design' || $validated['embroidery_type'] === 'both') && $validated['design_id']) {
+            $design = EmbroideryDesign::find($validated['design_id']);
+            $designCost = $design->additional_cost;
+            $totalCost += $designCost;
+        }
 
         return response()->json([
             'total_cost' => $totalCost,
-            'font_cost' => $font->additional_cost ?? 0,
-            'color_cost' => $color->additional_cost ?? 0,
+            'font_cost' => $fontCost,
+            'color_cost' => $colorCost,
+            'design_cost' => $designCost,
             'position_cost' => 0 // Placeholder for future position-based pricing
         ]);
     }

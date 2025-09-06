@@ -25,7 +25,7 @@ class ProductionController extends Controller
     {
         $statusFilter = $request->get('status', 'all');
         
-        $query = Sale::with(['user', 'financeAdmin', 'productionAdmin']);
+        $query = Sale::with(['user', 'financeAdmin', 'productionAdmin', 'payments']);
         
         // Filter based on status
         switch ($statusFilter) {

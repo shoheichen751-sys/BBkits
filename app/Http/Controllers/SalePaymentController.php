@@ -18,7 +18,7 @@ class SalePaymentController extends Controller
             'sale' => $sale,
             'payments' => $payments,
             'paymentSummary' => [
-                'total_amount' => $sale->total_amount,
+                'total_amount' => $sale->total_amount + $sale->shipping_amount,
                 'paid_amount' => $sale->getTotalPaidAmount(),
                 'pending_amount' => $sale->getTotalPendingAmount(),
                 'remaining_amount' => $sale->getRemainingAmount(),

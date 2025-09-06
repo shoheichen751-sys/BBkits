@@ -5,8 +5,9 @@ import DeleteConfirmationModal from '@/Components/DeleteConfirmationModal';
 import ResponsiveTable from '@/Components/ResponsiveTable';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { formatBRL } from '@/utils/currency';
 
-export default function Index({ sales }) {
+export default function Index({ sales, auth }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [saleToDelete, setSaleToDelete] = useState(null);
     const { delete: destroy, processing } = useForm();
@@ -71,12 +72,8 @@ export default function Index({ sales }) {
         );
     };
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(amount);
-    };
+    // Use the centralized Brazilian currency formatter
+    const formatCurrency = formatBRL;
 
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString('pt-BR');
@@ -468,13 +465,16 @@ export default function Index({ sales }) {
                                                                             <i className="fas fa-edit mr-1"></i>
                                                                             Editar
                                                                         </Link>
-                                                                        <button
-                                                                            onClick={() => handleDeleteClick(sale)}
-                                                                            className="action-btn action-btn-delete"
-                                                                        >
-                                                                            <i className="fas fa-trash mr-1"></i>
-                                                                            Excluir
-                                                                        </button>
+                                                                        {/* Only show delete button to admin users */}
+                                                                        {auth?.user?.role === 'admin' && (
+                                                                            <button
+                                                                                onClick={() => handleDeleteClick(sale)}
+                                                                                className="action-btn action-btn-delete"
+                                                                            >
+                                                                                <i className="fas fa-trash mr-1"></i>
+                                                                                Excluir
+                                                                            </button>
+                                                                        )}
                                                                     </>
                                                                 )}
                                                             </div>

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\CommissionRangeController;
 use App\Http\Controllers\FineController;
 use App\Http\Controllers\EmbroideryController;
 use App\Http\Controllers\ProductController;
+use App\Services\GamificationService;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -77,17 +78,39 @@ Route::get('/dashboard', function () {
             $monthlySalesCount = $allMonthlySales->count();
             $approvedSalesCount = $approvedSales->count();
 
-            $totalSalesAmount = $allMonthlySales->sum(fn($sale) => $sale->hasPartialPayments() ? $sale->total_amount : $sale->received_amount);
-            $approvedSalesTotal = $approvedSales->sum(fn($sale) => $sale->hasPartialPayments() ? $sale->getTotalPaidAmount() : $sale->received_amount);
-            $pendingSalesTotal = $pendingSales->sum(fn($sale) => $sale->hasPartialPayments() ? $sale->getTotalPendingAmount() : $sale->received_amount);
+            // Fix: Total sales amount should include shipping
+            $totalSalesAmount = 0;
+            foreach ($allMonthlySales as $sale) {
+                $totalSalesAmount += $sale->total_amount + ($sale->shipping_amount ?? 0);
+            }
+            
+            // Fix: Approved sales should only show amounts after admin approval
+            $approvedSalesTotal = 0;
+            foreach ($approvedSales as $sale) {
+                $approvedSalesTotal += $sale->hasPartialPayments() ? $sale->getTotalPaidAmount() : $sale->received_amount;
+            }
+            
+            // Fix: Pending sales should show total pending amount including shipping for non-approved sales
+            $pendingSalesTotal = 0;
+            foreach ($pendingSales as $sale) {
+                $pendingSalesTotal += $sale->total_amount + ($sale->shipping_amount ?? 0);
+            }
             $totalShipping = $allMonthlySales->sum('shipping_amount');
-            $commissionBase = $approvedSales->sum(fn($sale) => $sale->getCommissionBaseAmount());
+            
+            $commissionBase = 0;
+            foreach ($approvedSales as $sale) {
+                $commissionBase += $sale->getCommissionBaseAmount();
+            }
 
             $monthlyCommission = $user->getMonthlyCommissionTotal($currentMonth, $currentYear);
             $monthlySalesTotal = $user->getMonthlySalesTotal($currentMonth, $currentYear);
 
             $recentSales = $user->sales()->orderBy('created_at', 'desc')->limit(5)->get();
             $monthlyProgress = $commissionService->getMonthlyProgress($user, $currentMonth, $currentYear);
+            
+            // Get Top Performers ranking using service
+            $gamificationService = app(GamificationService::class);
+            $topPerformersData = $gamificationService->getTopPerformersForDashboard();
 
             $defaultGoal = 40000;
             $calculatedGoal = $monthlyProgress['remaining_to_goal'] + $monthlySalesTotal;
@@ -116,17 +139,13 @@ Route::get('/dashboard', function () {
                 'recentSales' => $recentSales,
                 'allMonthlySales' => $allMonthlySales,
                 'gamification' => [
-                    'level' => [
-                        'level' => 1,
-                        'icon' => '🌟',
-                        'message' => 'Vendedora Iniciante - Pronta para brilhar!',
-                        'progress' => 25
-                    ],
-                    'motivationalQuote' => 'Cada venda é uma história de amor que você ajuda a criar. Continue brilhando!',
+                    'level' => $gamificationService->getDetailedUserLevel($user),
+                    'motivationalQuote' => $gamificationService->getDailyMotivationalQuote(),
                     'achievements' => [],
-                    'ranking' => [],
-                    'userPosition' => 1
-                ]
+                    'ranking' => $topPerformersData,
+                    'userPosition' => $gamificationService->getUserPositionInRanking($user)
+                ],
+                'topPerformers' => $topPerformersData
             ]);
         }
 
@@ -184,6 +203,15 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\ProductionController::class, 'dashboard'])->name('dashboard');
     });
 
+    // Manager Routes - Order management and printing
+    Route::middleware('manager')->prefix('manager')->name('manager.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\ManagerController::class, 'dashboard'])->name('dashboard');
+        
+        Route::get('/orders', [\App\Http\Controllers\ManagerController::class, 'orders'])->name('orders.index');
+        Route::get('/orders/{sale}/print', [\App\Http\Controllers\ManagerController::class, 'printOrder'])->name('orders.print');
+        Route::post('/orders/{sale}/send-to-production', [\App\Http\Controllers\ManagerController::class, 'sendToProduction'])->name('orders.send-to-production');
+    });
+
     Route::middleware('admin')->group(function () {
         Route::get('/admin/sales', [SaleController::class, 'adminIndex'])->name('admin.sales.index');
         Route::post('/admin/sales/{sale}/approve', [SaleController::class, 'approve'])->name('admin.sales.approve');
@@ -217,6 +245,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/admin/integrations/sync-order/{sale}', [\App\Http\Controllers\IntegrationController::class, 'syncOrderStatus'])->name('admin.integrations.sync-order');
         Route::post('/admin/integrations/bulk-sync', [\App\Http\Controllers\IntegrationController::class, 'bulkSyncOrders'])->name('admin.integrations.bulk-sync');
         Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users.index');
+        Route::post('/admin/users', [AdminController::class, 'createUser'])->name('admin.users.store');
         Route::put('/admin/users/{user}/approve', [AdminController::class, 'approveUser'])->name('admin.users.approve');
         Route::put('/admin/users/{user}/reject', [AdminController::class, 'rejectUser'])->name('admin.users.reject');
         Route::put('/admin/sales/{sale}/correct', [SaleController::class, 'correct'])->name('admin.sales.correct');
@@ -242,6 +271,23 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/admin/embroidery/positions', [EmbroideryController::class, 'storePosition'])->name('admin.embroidery.positions.store');
         Route::put('/admin/embroidery/positions/{position}', [EmbroideryController::class, 'updatePosition'])->name('admin.embroidery.positions.update');
         Route::delete('/admin/embroidery/positions/{position}', [EmbroideryController::class, 'destroyPosition'])->name('admin.embroidery.positions.destroy');
+        
+        // Designs
+        Route::get('/admin/embroidery/designs', [EmbroideryController::class, 'designs'])->name('admin.embroidery.designs.index');
+        Route::post('/admin/embroidery/designs', [EmbroideryController::class, 'storeDesign'])->name('admin.embroidery.designs.store');
+        Route::put('/admin/embroidery/designs/{design}', [EmbroideryController::class, 'updateDesign'])->name('admin.embroidery.designs.update');
+        Route::delete('/admin/embroidery/designs/{design}', [EmbroideryController::class, 'destroyDesign'])->name('admin.embroidery.designs.destroy');
+        
+        // Customization Options Management
+        Route::get('/admin/customization/categories', [EmbroideryController::class, 'customizationCategories'])->name('admin.customization.categories.index');
+        Route::post('/admin/customization/categories', [EmbroideryController::class, 'storeCustomizationCategory'])->name('admin.customization.categories.store');
+        Route::put('/admin/customization/categories/{category}', [EmbroideryController::class, 'updateCustomizationCategory'])->name('admin.customization.categories.update');
+        Route::delete('/admin/customization/categories/{category}', [EmbroideryController::class, 'destroyCustomizationCategory'])->name('admin.customization.categories.destroy');
+        
+        Route::get('/admin/customization/values', [EmbroideryController::class, 'customizationValues'])->name('admin.customization.values.index');
+        Route::post('/admin/customization/values', [EmbroideryController::class, 'storeCustomizationValue'])->name('admin.customization.values.store');
+        Route::put('/admin/customization/values/{value}', [EmbroideryController::class, 'updateCustomizationValue'])->name('admin.customization.values.update');
+        Route::delete('/admin/customization/values/{value}', [EmbroideryController::class, 'destroyCustomizationValue'])->name('admin.customization.values.destroy');
 
         // Products Management
         Route::get('/admin/products', [ProductController::class, 'index'])->name('admin.products.index');
@@ -271,7 +317,10 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/api/embroidery/fonts', [EmbroideryController::class, 'apiFonts'])->name('api.embroidery.fonts');
         Route::get('/api/embroidery/colors', [EmbroideryController::class, 'apiColors'])->name('api.embroidery.colors');
         Route::get('/api/embroidery/positions', [EmbroideryController::class, 'apiPositions'])->name('api.embroidery.positions');
+        Route::get('/api/embroidery/designs', [EmbroideryController::class, 'apiDesigns'])->name('api.embroidery.designs');
+        Route::get('/api/embroidery/designs/category', [EmbroideryController::class, 'apiDesignsByCategory'])->name('api.embroidery.designs.by-category');
         Route::post('/api/embroidery/calculate-price', [EmbroideryController::class, 'apiCalculateEmbroideryPrice'])->name('api.embroidery.calculate-price');
+        Route::get('/api/product-categories', [ProductController::class, 'apiCategories'])->name('api.product-categories.index');
     });
     
     // API endpoint for checking approval status

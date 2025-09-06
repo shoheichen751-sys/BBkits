@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductCategory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,12 +15,14 @@ class ProductController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $query = Product::query();
+        $query = Product::with('productCategory');
 
         if ($request->has('search') && $request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('category', 'like', '%' . $request->search . '%');
+                  ->orWhereHas('productCategory', function ($cat) use ($request) {
+                      $cat->where('name', 'like', '%' . $request->search . '%');
+                  });
             });
         }
 
@@ -28,7 +31,7 @@ class ProductController extends Controller
         }
 
         if ($request->has('category') && $request->category !== 'all') {
-            $query->where('category', $request->category);
+            $query->where('category_id', $request->category);
         }
 
         if ($request->has('embroidery') && $request->embroidery !== 'all') {
@@ -38,8 +41,10 @@ class ProductController extends Controller
         $products = $query->latest()
                          ->paginate(15);
 
-        // Get unique categories for filter
-        $categories = Product::distinct()->pluck('category')->filter()->sort()->values();
+        // Get all active categories from database
+        $categories = ProductCategory::where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->get();
 
         return Inertia::render('Admin/Products/Index', [
             'products' => $products,
@@ -58,7 +63,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'category' => 'nullable|string|max:255',
+            'category_id' => 'required|exists:product_categories,id',
             'image_url' => 'nullable|url|max:500',
             'allows_embroidery' => 'boolean',
             'available_sizes' => 'nullable|array',
@@ -82,7 +87,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'category' => 'nullable|string|max:255',
+            'category_id' => 'required|exists:product_categories,id',
             'image_url' => 'nullable|url|max:500',
             'allows_embroidery' => 'boolean',
             'available_sizes' => 'nullable|array',
@@ -115,10 +120,10 @@ class ProductController extends Controller
     // API endpoints for frontend
     public function apiIndex(Request $request)
     {
-        $query = Product::active();
+        $query = Product::active()->with('productCategory');
 
         if ($request->has('category') && $request->category !== 'all') {
-            $query->where('category', $request->category);
+            $query->where('category_id', $request->category);
         }
 
         if ($request->has('allows_embroidery')) {
@@ -139,5 +144,15 @@ class ProductController extends Controller
             'available_sizes' => $product->available_sizes ?? [],
             'available_colors' => $product->available_colors ?? [],
         ]);
+    }
+
+    public function apiCategories()
+    {
+        $categories = ProductCategory::where('is_active', true)
+                                  ->orderBy('sort_order')
+                                  ->orderBy('name')
+                                  ->get();
+
+        return response()->json($categories);
     }
 }

@@ -78,6 +78,11 @@ class User extends Authenticatable
         return $this->role === 'production_admin';
     }
 
+    public function isManager(): bool
+    {
+        return $this->role === 'manager';
+    }
+
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
@@ -91,6 +96,21 @@ class User extends Authenticatable
     public function canManageProduction(): bool
     {
         return $this->isAdmin() || $this->isProductionAdmin();
+    }
+
+    public function canViewOrders(): bool
+    {
+        return $this->isAdmin() || $this->isManager() || $this->isFinanceiro() || $this->isProductionAdmin();
+    }
+
+    public function canPrintOrders(): bool
+    {
+        return $this->isAdmin() || $this->isManager();
+    }
+
+    public function canSendToProduction(): bool
+    {
+        return $this->isAdmin() || $this->isManager() || $this->isProductionAdmin();
     }
 
     public function sales(): HasMany
@@ -115,7 +135,7 @@ class User extends Authenticatable
 
     public function isApproved(): bool
     {
-        return $this->approved || $this->isAdmin() || $this->isFinanceiro() || $this->isFinanceAdmin() || $this->isProductionAdmin();
+        return $this->approved || $this->isAdmin() || $this->isFinanceiro() || $this->isFinanceAdmin() || $this->isProductionAdmin() || $this->isManager();
     }
 
     public function getMonthlyCommissionTotal(int $month, int $year): float

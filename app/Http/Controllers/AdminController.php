@@ -266,12 +266,39 @@ class AdminController extends Controller
 
     public function users()
     {
-        $users = User::where('role', 'vendedora')
+        // Show all users except vendedoras for admin management
+        $users = User::whereIn('role', ['admin', 'manager', 'financeiro', 'finance_admin', 'production_admin', 'vendedora'])
             ->with(['approvedBy'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
         return Inertia::render('Admin/Users/Index', compact('users'));
+    }
+
+    public function createUser(Request $request)
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Only admins can create users');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|string|in:manager,financeiro,production_admin,admin'
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => bcrypt($validated['password']),
+            'role' => $validated['role'],
+            'approved' => true, // Auto-approve admin-created users
+            'approved_by' => auth()->id(),
+            'approved_at' => now()
+        ]);
+
+        return redirect()->route('admin.users.index')->with('success', 'Usuário criado com sucesso!');
     }
 
     public function approveUser(User $user)

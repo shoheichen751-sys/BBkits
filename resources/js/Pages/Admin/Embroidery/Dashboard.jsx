@@ -12,7 +12,7 @@ export default function Dashboard({ auth, stats }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                             <div className="text-lg font-semibold text-gray-900">Fontes</div>
                             <div className="text-3xl font-bold text-blue-600">
@@ -44,6 +44,16 @@ export default function Dashboard({ auth, stats }) {
                         </div>
 
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                            <div className="text-lg font-semibold text-gray-900">Designs</div>
+                            <div className="text-3xl font-bold text-indigo-600">
+                                {stats?.total_designs || 0}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                                {stats?.active_designs || 0} ativos
+                            </div>
+                        </div>
+
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                             <div className="text-lg font-semibold text-gray-900">Produtos</div>
                             <div className="text-3xl font-bold text-orange-600">
                                 {stats?.embroidery_enabled_products || 0}
@@ -55,7 +65,7 @@ export default function Dashboard({ auth, stats }) {
                     </div>
 
                     {/* Management Links */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <Link
                             href="/admin/embroidery/fonts"
                             className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 hover:bg-gray-50 transition-colors"
@@ -104,6 +114,23 @@ export default function Dashboard({ auth, stats }) {
                                 <div>
                                     <div className="font-semibold text-gray-900">Gerenciar Posições</div>
                                     <div className="text-sm text-gray-600">Adicionar e editar posições de bordado</div>
+                                </div>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/admin/embroidery/designs"
+                            className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center">
+                                <div className="p-3 rounded-full bg-indigo-100 text-indigo-600 mr-4">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="font-semibold text-gray-900">Gerenciar Designs</div>
+                                    <div className="text-sm text-gray-600">Adicionar e editar designs decorativos</div>
                                 </div>
                             </div>
                         </Link>

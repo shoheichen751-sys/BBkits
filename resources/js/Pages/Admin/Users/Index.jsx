@@ -1,12 +1,22 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import PrimaryButton from '@/Components/PrimaryButton';
 import DangerButton from '@/Components/DangerButton';
+import toast from 'react-hot-toast';
 
 export default function Index({ auth, users }) {
     const [processing, setProcessing] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+
+    const { data, setData, post, errors, reset } = useForm({
+        name: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+        role: 'manager'
+    });
 
     const handleApprove = (userId) => {
         setProcessing(true);
@@ -22,13 +32,28 @@ export default function Index({ auth, users }) {
         });
     };
 
+    const handleCreateUser = (e) => {
+        e.preventDefault();
+        post(route('admin.users.store'), {
+            onSuccess: () => {
+                toast.success('Usuário criado com sucesso!');
+                setShowCreateModal(false);
+                reset();
+            },
+            onError: () => {
+                toast.error('Erro ao criar usuário. Verifique os dados.');
+            }
+        });
+    };
+
     const getRoleBadge = (role) => {
         const roleColors = {
             admin: 'bg-red-100 text-red-800',
             vendedora: 'bg-blue-100 text-blue-800',
             financeiro: 'bg-green-100 text-green-800',
             finance_admin: 'bg-yellow-100 text-yellow-800',
-            production_admin: 'bg-purple-100 text-purple-800'
+            production_admin: 'bg-purple-100 text-purple-800',
+            manager: 'bg-indigo-100 text-indigo-800'
         };
 
         const roleLabels = {
@@ -36,7 +61,8 @@ export default function Index({ auth, users }) {
             vendedora: 'Vendedora',
             financeiro: 'Financeiro',
             finance_admin: 'Admin Financeiro',
-            production_admin: 'Admin Produção'
+            production_admin: 'Admin Produção',
+            manager: 'Gerente'
         };
 
         return (
@@ -59,9 +85,23 @@ export default function Index({ auth, users }) {
     };
 
     return (
+        <>
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Gerenciar Usuários</h2>}
+            header={
+                <div className="flex justify-between items-center">
+                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">Gerenciar Usuários</h2>
+                    <PrimaryButton
+                        onClick={() => setShowCreateModal(true)}
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                    >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Criar Usuário
+                    </PrimaryButton>
+                </div>
+            }
         >
             <Head title="Gerenciar Usuários" />
 
@@ -177,5 +217,132 @@ export default function Index({ auth, users }) {
                 </div>
             </div>
         </AuthenticatedLayout>
+
+        {/* Create User Modal */}
+        {showCreateModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg w-full max-w-md">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-6 border-b">
+                        <h2 className="text-xl font-bold text-gray-900">Criar Novo Usuário</h2>
+                        <button
+                            onClick={() => setShowCreateModal(false)}
+                            className="p-2 hover:bg-gray-100 rounded-lg"
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Form */}
+                    <form onSubmit={handleCreateUser} className="p-6">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nome
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.name}
+                                    onChange={e => setData('name', e.target.value)}
+                                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                    required
+                                />
+                                {errors.name && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={data.email}
+                                    onChange={e => setData('email', e.target.value)}
+                                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                    required
+                                />
+                                {errors.email && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Função
+                                </label>
+                                <select
+                                    value={data.role}
+                                    onChange={e => setData('role', e.target.value)}
+                                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option value="manager">Gerente</option>
+                                    <option value="financeiro">Financeiro</option>
+                                    <option value="production_admin">Admin Produção</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                                {errors.role && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.role}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Senha
+                                </label>
+                                <input
+                                    type="password"
+                                    value={data.password}
+                                    onChange={e => setData('password', e.target.value)}
+                                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                    required
+                                />
+                                {errors.password && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Confirmar Senha
+                                </label>
+                                <input
+                                    type="password"
+                                    value={data.password_confirmation}
+                                    onChange={e => setData('password_confirmation', e.target.value)}
+                                    className="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                    required
+                                />
+                                {errors.password_confirmation && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.password_confirmation}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex justify-end gap-4 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateModal(false)}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <PrimaryButton
+                                type="submit"
+                                disabled={processing}
+                                className="bg-indigo-600 hover:bg-indigo-700"
+                            >
+                                {processing ? 'Criando...' : 'Criar Usuário'}
+                            </PrimaryButton>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+        </>
     );
 }

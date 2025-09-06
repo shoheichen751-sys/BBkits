@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { formatBRL, formatBRLNumber, formatBrazilianCurrencyInput, parseBrazilianCurrency, formatAdditionalCost } from '@/utils/currency';
 
 export default function CreateExpanded() {
     const { data, setData, post, processing, errors } = useForm({
@@ -11,6 +12,9 @@ export default function CreateExpanded() {
         client_email: '',
         client_phone: '',
         client_cpf: '',
+        
+        // Products info (now supports multiple products)
+        products: [], // Array of {product_id, product_name, product_category, size, quantity, unit_price, has_embroidery, embroidery_text, embroidery_font, embroidery_color, embroidery_position}
         
         // Child & embroidery
         child_name: '',
@@ -45,67 +49,161 @@ export default function CreateExpanded() {
     const [embroideryFonts, setEmbroideryFonts] = useState([]);
     const [embroideryColors, setEmbroideryColors] = useState([]);
     const [embroideryPositions, setEmbroideryPositions] = useState([]);
+    const [availableProducts, setAvailableProducts] = useState([]);
+    const [selectedProduct, setSelectedProduct] = useState(null);
     const [loadingOptions, setLoadingOptions] = useState(true);
     const [totalWithEmbroidery, setTotalWithEmbroidery] = useState(0);
+    
+    // Current product being added to cart
+    const [currentProduct, setCurrentProduct] = useState({
+        product_id: '',
+        product_name: '',
+        product_category: '',
+        size: 'P',
+        quantity: 1,
+        unit_price: 0,
+        has_embroidery: true,
+        embroidery_text: '',
+        embroidery_font: '',
+        embroidery_color: '',
+        embroidery_position: ''
+    });
+    
+    // Brazilian size mapping and pricing
+    const sizePricing = {
+        'P': { name: 'Pequeno (P)', basePrice: 0 },
+        'M': { name: 'Médio (M)', basePrice: 10 },
+        'G': { name: 'Grande (G)', basePrice: 20 },
+        'GG': { name: 'Extra Grande (GG)', basePrice: 30 }
+    };
 
-    // Fetch embroidery options from API on component mount
+    // Fetch embroidery options and categories from API on component mount
     useEffect(() => {
-        const fetchEmbroideryOptions = async () => {
+        const fetchOptions = async () => {
             try {
                 setLoadingOptions(true);
                 
-                const [fontsRes, colorsRes, positionsRes] = await Promise.all([
+                const [fontsRes, colorsRes, positionsRes, productsRes] = await Promise.all([
                     axios.get('/api/embroidery/fonts'),
                     axios.get('/api/embroidery/colors'),
-                    axios.get('/api/embroidery/positions')
+                    axios.get('/api/embroidery/positions'),
+                    axios.get('/api/products')
                 ]);
                 
                 setEmbroideryFonts(fontsRes.data);
                 setEmbroideryColors(colorsRes.data);
                 setEmbroideryPositions(positionsRes.data);
+                setAvailableProducts(productsRes.data);
                 
-                // Set default values if available
-                if (fontsRes.data.length > 0 && !data.embroidery_font) {
-                    setData('embroidery_font', fontsRes.data[0].id);
-                }
-                if (colorsRes.data.length > 0 && !data.embroidery_color) {
-                    setData('embroidery_color', colorsRes.data[0].id);
-                }
-                if (positionsRes.data.length > 0 && !data.embroidery_position) {
-                    setData('embroidery_position', positionsRes.data[0].id);
-                }
+                // Set default values for current product being added
+                setCurrentProduct(prev => ({
+                    ...prev,
+                    embroidery_font: fontsRes.data.length > 0 ? fontsRes.data[0].id : '',
+                    embroidery_color: colorsRes.data.length > 0 ? colorsRes.data[0].id : '',
+                    embroidery_position: positionsRes.data.length > 0 ? positionsRes.data[0].id : ''
+                }));
                 
                 setLoadingOptions(false);
             } catch (error) {
-                console.error('Error fetching embroidery options:', error);
-                toast.error('Erro ao carregar opções de bordado');
+                console.error('Error fetching options:', error);
+                toast.error('Erro ao carregar opções');
                 setLoadingOptions(false);
             }
         };
         
-        fetchEmbroideryOptions();
+        fetchOptions();
     }, []);
     
-    // Calculate total with embroidery costs whenever options change
+    // Handle product selection for current product being added
+    const handleCurrentProductChange = (productId) => {
+        const selectedProd = availableProducts.find(p => p.id == productId);
+        if (selectedProd) {
+            setCurrentProduct(prev => ({
+                ...prev,
+                product_id: productId,
+                product_name: selectedProd.name,
+                product_category: selectedProd.product_category ? selectedProd.product_category.name : 'N/A',
+                unit_price: parseFloat(selectedProd.price || 0),
+                embroidery_text: data.child_name || '' // Auto-fill child name
+            }));
+            setSelectedProduct(selectedProd);
+        }
+    };
+    
+    // Add current product to cart
+    const addProductToCart = () => {
+        if (!currentProduct.product_id) {
+            toast.error('Por favor, selecione um produto');
+            return;
+        }
+        
+        if (!currentProduct.embroidery_text.trim()) {
+            toast.error('Por favor, digite o nome para bordado');
+            return;
+        }
+        
+        // Calculate product total with embroidery and size pricing
+        const sizePrice = sizePricing[currentProduct.size]?.basePrice || 0;
+        
+        let embroideryCost = 0;
+        const selectedFont = embroideryFonts.find(f => f.id == currentProduct.embroidery_font);
+        const selectedColor = embroideryColors.find(c => c.id == currentProduct.embroidery_color);
+        const selectedPosition = embroideryPositions.find(p => p.id == currentProduct.embroidery_position);
+        
+        if (selectedFont) embroideryCost += parseFloat(selectedFont.additional_cost || 0);
+        if (selectedColor) embroideryCost += parseFloat(selectedColor.additional_cost || 0);
+        if (selectedPosition) embroideryCost += parseFloat(selectedPosition.additional_cost || 0);
+        
+        const productTotal = (currentProduct.unit_price + sizePrice + embroideryCost) * currentProduct.quantity;
+        
+        // Add to cart
+        const newProduct = {
+            ...currentProduct,
+            id: Date.now(), // Unique ID for cart item
+            size_price: sizePrice,
+            embroidery_cost: embroideryCost,
+            total_price: productTotal
+        };
+        
+        setData('products', [...data.products, newProduct]);
+        
+        // Reset current product form
+        setCurrentProduct({
+            product_id: '',
+            product_name: '',
+            product_category: '',
+            size: 'P',
+            quantity: 1,
+            unit_price: 0,
+            has_embroidery: true,
+            embroidery_text: '',
+            embroidery_font: embroideryFonts.length > 0 ? embroideryFonts[0].id : '',
+            embroidery_color: embroideryColors.length > 0 ? embroideryColors[0].id : '',
+            embroidery_position: embroideryPositions.length > 0 ? embroideryPositions[0].id : ''
+        });
+        
+        toast.success('Produto adicionado ao carrinho!');
+    };
+    
+    // Remove product from cart
+    const removeProductFromCart = (productIndex) => {
+        const updatedProducts = data.products.filter((_, index) => index !== productIndex);
+        setData('products', updatedProducts);
+        toast.success('Produto removido do carrinho!');
+    };
+    
+    // Calculate total from all products in cart plus shipping
     useEffect(() => {
         const calculateTotal = () => {
-            let embroideryCost = 0;
-            
-            // Find selected options and add their costs
-            const selectedFont = embroideryFonts.find(f => f.id == data.embroidery_font);
-            const selectedColor = embroideryColors.find(c => c.id == data.embroidery_color);
-            const selectedPosition = embroideryPositions.find(p => p.id == data.embroidery_position);
-            
-            if (selectedFont) embroideryCost += parseFloat(selectedFont.additional_cost || 0);
-            if (selectedColor) embroideryCost += parseFloat(selectedColor.additional_cost || 0);
-            if (selectedPosition) embroideryCost += parseFloat(selectedPosition.additional_cost || 0);
-            
-            const baseAmount = parseFloat(data.total_amount || 0);
-            setTotalWithEmbroidery(baseAmount + embroideryCost);
+            const productsTotal = data.products.reduce((sum, product) => sum + product.total_price, 0);
+            const shippingAmount = parseFloat(data.shipping_amount || 0);
+            const totalAmount = productsTotal + shippingAmount;
+            setTotalWithEmbroidery(totalAmount);
+            setData('total_amount', totalAmount.toFixed(2));
         };
         
         calculateTotal();
-    }, [data.embroidery_font, data.embroidery_color, data.embroidery_position, data.total_amount, embroideryFonts, embroideryColors, embroideryPositions]);
+    }, [data.products, data.shipping_amount]);
 
     const handleReceiptChange = (e) => {
         const file = e.target.files[0];
@@ -121,12 +219,21 @@ export default function CreateExpanded() {
         }
     };
 
+    // Use centralized Brazilian currency utilities (rename to avoid conflicts)
+    const formatBrazilianCurrency = formatBrazilianCurrencyInput;
+    const parseBrazilianCurrencyValue = parseBrazilianCurrency;
+
     const validateForm = () => {
         const requiredFields = [
             'client_name', 'client_email', 'client_phone',
-            'child_name', 'total_amount', 'shipping_amount',
-            'received_amount', 'payment_date', 'payment_method'
+            'child_name', 'shipping_amount', 'received_amount', 'payment_date', 'payment_method'
         ];
+        
+        // Check if products array has items
+        if (data.products && data.products.length === 0) {
+            toast.error('Por favor, adicione pelo menos um produto ao carrinho');
+            return;
+        }
 
         const missingFields = requiredFields.filter(field => !data[field]);
         
@@ -217,7 +324,19 @@ export default function CreateExpanded() {
         return value;
     };
 
-    // Removed hardcoded options - now fetched from API
+    const handleProductSelect = (product) => {
+        setSelectedProduct(product);
+        
+        // Auto-populate form fields with validation
+        const newData = {
+            ...data,
+            product_category: product.category_id || product.product_category?.id,
+            product_price: product.price ? product.price.toString() : '0',
+            product_size: product.available_sizes?.[0] || 'P' // Default to first available size
+        };
+        
+        setData(newData);
+    };
 
     const paymentMethods = {
         pix: 'PIX',
@@ -330,6 +449,345 @@ export default function CreateExpanded() {
                                 </div>
                             </div>
 
+                            {/* Product Selection Section */}
+                            <div className="bg-white rounded-xl shadow-md p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                    <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                                        🛍️
+                                    </span>
+                                    Seleção de Produto
+                                </h3>
+                                
+                                {loadingOptions ? (
+                                    <div className="flex justify-center items-center py-8">
+                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+                                        <span className="ml-3 text-gray-600">Carregando produtos...</span>
+                                    </div>
+                                ) : products.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7h16" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto encontrado</h3>
+                                        <p className="text-gray-500 mb-4">
+                                            Não há produtos disponíveis no momento. Entre em contato com o administrador para adicionar produtos ao catálogo.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {products.map((product) => (
+                                            <div
+                                                key={product.id}
+                                                onClick={() => handleProductSelect(product)}
+                                                className={`
+                                                    relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 hover:shadow-lg
+                                                    ${selectedProduct?.id === product.id 
+                                                        ? 'border-purple-500 bg-purple-50 shadow-md' 
+                                                        : 'border-gray-200 hover:border-purple-300'
+                                                    }
+                                                `}
+                                            >
+                                                {selectedProduct?.id === product.id && (
+                                                    <div className="absolute top-2 right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="aspect-w-3 aspect-h-2 mb-4">
+                                                    <img
+                                                        src={product.image_url || 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem'}
+                                                        alt={product.name}
+                                                        className="w-full h-32 object-cover rounded-md"
+                                                        onError={(e) => {
+                                                            e.target.src = 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem';
+                                                        }}
+                                                    />
+                                                </div>
+                                                
+                                                <h4 className="font-semibold text-gray-900 mb-2">{product.name}</h4>
+                                                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+                                                
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-lg font-bold text-purple-600">
+                                                            {formatBRL(product.price)}
+                                                        </span>
+                                                        <span className="text-sm text-gray-500">
+                                                            Est: {product.stock_quantity}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-wrap gap-1">
+                                                        <span className="text-xs text-gray-500">Tamanhos:</span>
+                                                        {product.available_sizes?.map((size) => (
+                                                            <span key={size} className="px-2 py-1 bg-gray-100 text-xs rounded">
+                                                                {size}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                    
+                                                    {product.allows_embroidery && (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                                ✨ Aceita bordado
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {selectedProduct && (
+                                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span className="font-medium text-green-800">Produto Selecionado:</span>
+                                        </div>
+                                        <p className="text-green-700">
+                                            <strong>{selectedProduct.name}</strong> - {formatBRL(selectedProduct.price)}
+                                        </p>
+                                        <p className="text-sm text-green-600">
+                                            Os campos de produto foram preenchidos automaticamente abaixo.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Pagamento Section with Product Info */}
+                            <div className="bg-white rounded-xl shadow-md p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                    <span className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+                                        💰
+                                    </span>
+                                    Seleção de Produtos
+                                </h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Produto *
+                                        </label>
+                                        <select
+                                            value={data.product_id}
+                                            onChange={e => handleProductChange(e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            disabled={loadingOptions}
+                                            required
+                                        >
+                                            <option value="">Selecione um produto</option>
+                                            {loadingOptions ? (
+                                                <option>Carregando...</option>
+                                            ) : (
+                                                products.map((product) => (
+                                                    <option key={product.id} value={product.id}>
+                                                        {product.name} - {formatBRL(product.price)}
+                                                    </option>
+                                                ))
+                                            )}
+                                        </select>
+                                        {errors.product_id && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.product_id}</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Categoria
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.product_category}
+                                            className="w-full rounded-lg border-gray-300 bg-gray-50 text-gray-600"
+                                            placeholder="Será preenchida automaticamente"
+                                            disabled
+                                            readOnly
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Tamanho *
+                                        </label>
+                                        <select
+                                            value={data.product_size}
+                                            onChange={e => setData('product_size', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            required
+                                        >
+                                            {selectedProduct ? (
+                                                selectedProduct.available_sizes?.map((size) => {
+                                                    const sizeInfo = sizePricing[size] || { name: size, basePrice: 0 };
+                                                    return (
+                                                        <option key={size} value={size}>
+                                                            {sizeInfo.name} {sizeInfo.basePrice > 0 && formatAdditionalCost(sizeInfo.basePrice)}
+                                                        </option>
+                                                    );
+                                                })
+                                            ) : (
+                                                Object.entries(sizePricing).map(([size, info]) => (
+                                                    <option key={size} value={size}>
+                                                        {info.name} {info.basePrice > 0 && formatAdditionalCost(info.basePrice)}
+                                                    </option>
+                                                ))
+                                            )}
+                                        </select>
+                                        {errors.product_size && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.product_size}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Preço Base do Produto *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.product_price ? formatBRL(data.product_price) : ''}
+                                            className="w-full rounded-lg border-gray-300 bg-gray-50 text-gray-600"
+                                            placeholder="Será preenchido automaticamente"
+                                            disabled
+                                            readOnly
+                                        />
+                                        {errors.product_price && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.product_price}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Total Calculado
+                                        </label>
+                                        <div className="w-full rounded-lg border-gray-300 bg-gray-50 px-3 py-2 text-gray-700">
+                                            {formatBRL(totalWithEmbroidery)}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Preço base + tamanho + bordado
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Valor do Frete *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.shipping_amount ? formatBRLNumber(data.shipping_amount) : ''}
+                                            onChange={e => {
+                                                const formatted = formatBrazilianCurrency(e.target.value);
+                                                const parsed = parseBrazilianCurrencyValue(formatted);
+                                                setData('shipping_amount', parsed);
+                                            }}
+                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            placeholder="25,00"
+                                            required
+                                        />
+                                        {errors.shipping_amount && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.shipping_amount}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Forma de Pagamento *
+                                        </label>
+                                        <select
+                                            value={data.payment_method}
+                                            onChange={e => setData('payment_method', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            required
+                                        >
+                                            {Object.entries(paymentMethods).map(([value, label]) => (
+                                                <option key={value} value={value}>{label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Valor Recebido *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.received_amount ? formatBRLNumber(data.received_amount) : ''}
+                                            onChange={e => {
+                                                const formatted = formatBrazilianCurrency(e.target.value);
+                                                const parsed = parseBrazilianCurrencyValue(formatted);
+                                                setData('received_amount', parsed);
+                                            }}
+                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            placeholder="150,00"
+                                            required
+                                        />
+                                        {errors.received_amount && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.received_amount}</p>
+                                        )}
+                                        {data.received_amount && data.total_amount && (
+                                            <p className="text-sm text-gray-600 mt-1">
+                                                {parseFloat(data.received_amount) < parseFloat(data.total_amount) ? (
+                                                    <span className="text-orange-600">
+                                                        ⚠️ Pagamento parcial - Restante: {formatBRL(parseFloat(data.total_amount) - parseFloat(data.received_amount))}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-green-600">
+                                                        ✅ Pagamento completo
+                                                    </span>
+                                                )}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Data do Pagamento *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={data.payment_date}
+                                            onChange={e => setData('payment_date', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            required
+                                        />
+                                        {errors.payment_date && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.payment_date}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Payment Receipt Upload */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Comprovante de Pagamento
+                                        </label>
+                                        <input
+                                            type="file"
+                                            onChange={handleReceiptChange}
+                                            accept="image/*,.pdf"
+                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                        />
+                                        {errors.payment_receipt && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.payment_receipt}</p>
+                                        )}
+                                        {receiptPreview && (
+                                            <div className="mt-2">
+                                                <p className="text-sm text-gray-600 mb-2">Pré-visualização:</p>
+                                                <img 
+                                                    src={receiptPreview} 
+                                                    alt="Comprovante de pagamento" 
+                                                    className="max-w-xs max-h-32 object-contain rounded-lg border"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Bordado Section */}
                             <div className="bg-white rounded-xl shadow-md p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
@@ -373,7 +831,7 @@ export default function CreateExpanded() {
                                                 embroideryPositions.map((position) => (
                                                     <option key={position.id} value={position.id}>
                                                         {position.display_name || position.name}
-                                                        {position.additional_cost > 0 && ` (+R$ ${parseFloat(position.additional_cost).toFixed(2)})`}
+                                                        {position.additional_cost > 0 && formatAdditionalCost(position.additional_cost)}
                                                     </option>
                                                 ))
                                             )}
@@ -396,7 +854,7 @@ export default function CreateExpanded() {
                                                 embroideryColors.map((color) => (
                                                     <option key={color.id} value={color.id}>
                                                         {color.name}
-                                                        {color.additional_cost > 0 && ` (+R$ ${parseFloat(color.additional_cost).toFixed(2)})`}
+                                                        {color.additional_cost > 0 && formatAdditionalCost(color.additional_cost)}
                                                     </option>
                                                 ))
                                             )}
@@ -419,205 +877,11 @@ export default function CreateExpanded() {
                                                 embroideryFonts.map((font) => (
                                                     <option key={font.id} value={font.id}>
                                                         {font.display_name || font.name}
-                                                        {font.additional_cost > 0 && ` (+R$ ${parseFloat(font.additional_cost).toFixed(2)})`}
+                                                        {font.additional_cost > 0 && formatAdditionalCost(font.additional_cost)}
                                                     </option>
                                                 ))
                                             )}
                                         </select>
-                                    </div>
-                                </div>
-
-                                {/* Preview do bordado */}
-                                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm font-medium text-gray-700 mb-2">Prévia:</p>
-                                    <div className="text-center p-4 bg-white rounded border-2 border-dashed border-gray-300">
-                                        <p 
-                                            className="text-2xl font-serif"
-                                            style={{ 
-                                                color: embroideryColors.find(c => c.id == data.embroidery_color)?.hex_code || '#000000'
-                                            }}
-                                        >
-                                            {data.child_name || 'Nome da Criança'}
-                                        </p>
-                                        <div className="text-xs text-gray-500 mt-2 space-y-1">
-                                            <p>Posição: {embroideryPositions.find(p => p.id == data.embroidery_position)?.display_name || 'Não selecionado'}</p>
-                                            <p>Fonte: {embroideryFonts.find(f => f.id == data.embroidery_font)?.display_name || 'Não selecionado'}</p>
-                                            <p>Cor: {embroideryColors.find(c => c.id == data.embroidery_color)?.name || 'Não selecionado'}</p>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Show total with embroidery cost */}
-                                    <div className="mt-4 p-3 bg-purple-50 rounded-lg">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm font-medium text-purple-700">Custo adicional do bordado:</span>
-                                            <span className="text-sm font-bold text-purple-900">
-                                                R$ {(totalWithEmbroidery - parseFloat(data.total_amount || 0)).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-purple-200">
-                                            <span className="font-medium text-purple-700">Total com bordado:</span>
-                                            <span className="text-lg font-bold text-purple-900">
-                                                R$ {totalWithEmbroidery.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Pagamento Section */}
-                            <div className="bg-white rounded-xl shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                                    <span className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
-                                        💰
-                                    </span>
-                                    Informações de Pagamento
-                                </h3>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Valor Total *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={data.total_amount}
-                                            onChange={e => setData('total_amount', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            placeholder="299.90"
-                                            required
-                                        />
-                                        {errors.total_amount && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.total_amount}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Valor do Frete *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={data.shipping_amount}
-                                            onChange={e => setData('shipping_amount', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            placeholder="25.00"
-                                            required
-                                        />
-                                        {errors.shipping_amount && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.shipping_amount}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Forma de Pagamento *
-                                        </label>
-                                        <select
-                                            value={data.payment_method}
-                                            onChange={e => setData('payment_method', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            required
-                                        >
-                                            {Object.entries(paymentMethods).map(([value, label]) => (
-                                                <option key={value} value={value}>{label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Valor Recebido *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={data.received_amount}
-                                            onChange={e => setData('received_amount', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            placeholder="150.00"
-                                            required
-                                        />
-                                        {errors.received_amount && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.received_amount}</p>
-                                        )}
-                                        {data.received_amount && data.total_amount && (
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {parseFloat(data.received_amount) < parseFloat(data.total_amount) ? (
-                                                    <span className="text-orange-600">
-                                                        ⚠️ Pagamento parcial - Restante: R$ {(parseFloat(data.total_amount) - parseFloat(data.received_amount)).toFixed(2)}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-green-600">
-                                                        ✅ Pagamento completo
-                                                    </span>
-                                                )}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Data do Pagamento *
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={data.payment_date}
-                                            onChange={e => setData('payment_date', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            required
-                                        />
-                                        {errors.payment_date && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.payment_date}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Comprovante de Pagamento
-                                        </label>
-                                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-purple-400 transition-colors">
-                                            <div className="space-y-1 text-center">
-                                                {receiptPreview ? (
-                                                    <div>
-                                                        <img 
-                                                            src={receiptPreview} 
-                                                            alt="Preview" 
-                                                            className="mx-auto h-32 w-auto rounded"
-                                                        />
-                                                        <p className="text-sm text-gray-600 mt-2">
-                                                            {data.payment_receipt?.name}
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                        </svg>
-                                                        <div className="flex text-sm text-gray-600">
-                                                            <label htmlFor="payment_receipt" className="relative cursor-pointer rounded-md bg-white font-medium text-purple-600 hover:text-purple-500">
-                                                                <span>Enviar arquivo</span>
-                                                                <input
-                                                                    id="payment_receipt"
-                                                                    type="file"
-                                                                    className="sr-only"
-                                                                    accept="image/*,application/pdf"
-                                                                    onChange={handleReceiptChange}
-                                                                />
-                                                            </label>
-                                                            <p className="pl-1">ou arraste aqui</p>
-                                                        </div>
-                                                        <p className="text-xs text-gray-500">
-                                                            PNG, JPG, PDF até 2MB
-                                                        </p>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {errors.payment_receipt && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.payment_receipt}</p>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -642,11 +906,8 @@ export default function CreateExpanded() {
                                             value={data.delivery_address}
                                             onChange={e => setData('delivery_address', e.target.value)}
                                             className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            placeholder="Rua das Flores (Cliente preencherá depois)"
+                                            placeholder="Rua das Flores"
                                         />
-                                        {errors.delivery_address && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.delivery_address}</p>
-                                        )}
                                     </div>
 
                                     <div>
@@ -660,9 +921,6 @@ export default function CreateExpanded() {
                                             className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                                             placeholder="123"
                                         />
-                                        {errors.delivery_number && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.delivery_number}</p>
-                                        )}
                                     </div>
 
                                     <div>
@@ -689,9 +947,6 @@ export default function CreateExpanded() {
                                             className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                                             placeholder="Jardim Primavera"
                                         />
-                                        {errors.delivery_neighborhood && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.delivery_neighborhood}</p>
-                                        )}
                                     </div>
 
                                     <div>
@@ -705,9 +960,6 @@ export default function CreateExpanded() {
                                             className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                                             placeholder="São Paulo"
                                         />
-                                        {errors.delivery_city && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.delivery_city}</p>
-                                        )}
                                     </div>
 
                                     <div>
@@ -724,9 +976,6 @@ export default function CreateExpanded() {
                                                 <option key={state} value={state}>{state}</option>
                                             ))}
                                         </select>
-                                        {errors.delivery_state && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.delivery_state}</p>
-                                        )}
                                     </div>
 
                                     <div>
@@ -740,66 +989,9 @@ export default function CreateExpanded() {
                                             className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                                             placeholder="01234-567"
                                         />
-                                        {errors.delivery_zipcode && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.delivery_zipcode}</p>
-                                        )}
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Observações Section */}
-                            <div className="bg-white rounded-xl shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                                    <span className="w-8 h-8 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center">
-                                        📝
-                                    </span>
-                                    Observações
-                                </h3>
-                                
-                                <textarea
-                                    value={data.notes}
-                                    onChange={e => setData('notes', e.target.value)}
-                                    rows={4}
-                                    className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                    placeholder="Informações adicionais sobre o pedido..."
-                                />
-                            </div>
-
-                            {/* Preview Button */}
-                            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPreview(!showPreview)}
-                                    className="w-full text-orange-700 font-medium flex items-center justify-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    {showPreview ? 'Ocultar' : 'Visualizar'} Resumo do Pedido
-                                </button>
-                            </div>
-
-                            {/* Preview Section */}
-                            {showPreview && (
-                                <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
-                                    <h4 className="font-semibold text-purple-900 mb-4">Resumo do Pedido:</h4>
-                                    <div className="space-y-2 text-sm">
-                                        <p><strong>Cliente:</strong> {data.client_name} ({data.client_email})</p>
-                                        <p><strong>Telefone:</strong> {data.client_phone}</p>
-                                        <p><strong>Criança:</strong> {data.child_name}</p>
-                                        <p><strong>Bordado:</strong> 
-                                            {embroideryColors.find(c => c.id == data.embroidery_color)?.name}, 
-                                            {embroideryFonts.find(f => f.id == data.embroidery_font)?.display_name}, 
-                                            {embroideryPositions.find(p => p.id == data.embroidery_position)?.display_name}
-                                        </p>
-                                        <p><strong>Valor Total:</strong> R$ {parseFloat(data.total_amount || 0).toFixed(2)}</p>
-                                        <p><strong>Valor Recebido:</strong> R$ {parseFloat(data.received_amount || 0).toFixed(2)}</p>
-                                        <p><strong>Forma de Pagamento:</strong> {paymentMethods[data.payment_method]}</p>
-                                        <p><strong>Entrega:</strong> {data.delivery_address}, {data.delivery_number} - {data.delivery_city}/{data.delivery_state}</p>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Action Buttons */}
                             <div className="flex flex-col sm:flex-row gap-4 justify-end">

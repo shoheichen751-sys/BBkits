@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
+import { formatBRL } from '@/utils/currency';
 
 export default function ClientPage({ sale, orderStatus, orderStatusColor, remainingAmount, needsFinalPayment, productPhotoUrl }) {
     const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -200,18 +201,18 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, remain
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-600">Valor Total</p>
+                                <p className="text-sm text-gray-600">Valor Total com Frete</p>
                                 <p className="font-medium text-gray-900">
-                                    R$ {parseFloat(sale.total_amount).toFixed(2)}
+                                    {formatBRL(parseFloat(sale.total_amount) + parseFloat(sale.shipping_amount || 0))}
                                 </p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-600">Valor Pago</p>
                                 <p className="font-medium text-gray-900">
-                                    R$ {parseFloat(sale.received_amount).toFixed(2)}
+                                    {formatBRL((parseFloat(sale.total_amount) + parseFloat(sale.shipping_amount || 0)) - remainingAmount)}
                                     {remainingAmount > 0 && (
                                         <span className="text-sm text-orange-600 ml-2">
-                                            (Falta R$ {remainingAmount.toFixed(2)})
+                                            (Falta {formatBRL(remainingAmount)})
                                         </span>
                                     )}
                                 </p>
@@ -269,7 +270,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, remain
                                 💰 Pagamento Final Pendente
                             </h3>
                             <p className="text-orange-700 mb-4">
-                                Falta apenas o pagamento de R$ {remainingAmount.toFixed(2)} para enviarmos seu pedido!
+                                Falta apenas o pagamento de {formatBRL(remainingAmount)} para enviarmos seu pedido!
                             </p>
                             {!showPaymentForm ? (
                                 <button
@@ -522,7 +523,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, remain
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <a 
-                                href={`https://wa.me/5511999999999?text=Olá! Meu pedido é ${sale.child_name}`}
+                                href={`https://wa.me/5581982233873?text=Olá! Meu pedido é ${sale.unique_token} - ${sale.child_name}. Cliente: ${sale.client_name}`}
                                 className="inline-flex items-center justify-center gap-2 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -533,7 +534,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, remain
                                 WhatsApp
                             </a>
                             <a 
-                                href="mailto:contato@bbkits.com.br"
+                                href="mailto:vendas@bbkits.com.br"
                                 className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                             >
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

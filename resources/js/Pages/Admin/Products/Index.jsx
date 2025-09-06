@@ -18,7 +18,7 @@ export default function Index({ auth, products, categories, filters }) {
         name: '',
         description: '',
         price: '',
-        category: 'camiseta',
+        category_id: categories && categories.length > 0 ? categories[0].id : '',
         sizes: ['P', 'M', 'G'],
         colors: ['Branco', 'Preto'],
         allows_embroidery: true,
@@ -37,7 +37,7 @@ export default function Index({ auth, products, categories, filters }) {
             name: product.name,
             description: product.description || '',
             price: product.price,
-            category: product.category,
+            category_id: product.category_id || (categories && categories.length > 0 ? categories[0].id : ''),
             sizes: Array.isArray(product.sizes) ? product.sizes : JSON.parse(product.sizes || '[]'),
             colors: Array.isArray(product.colors) ? product.colors : JSON.parse(product.colors || '[]'),
             allows_embroidery: product.allows_embroidery,
@@ -151,7 +151,7 @@ export default function Index({ auth, products, categories, filters }) {
                                                         {product.name}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {product.category}
+                                                        {product.product_category ? product.product_category.name : 'Sem categoria'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         R$ {parseFloat(product.price).toFixed(2)}
@@ -223,17 +223,17 @@ export default function Index({ auth, products, categories, filters }) {
                         <div>
                             <InputLabel value="Categoria" />
                             <select
-                                value={data.category}
-                                onChange={(e) => setData('category', e.target.value)}
+                                value={data.category_id}
+                                onChange={(e) => setData('category_id', e.target.value)}
                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
                                 required
                             >
-                                <option value="camiseta">Camiseta</option>
-                                <option value="polo">Polo</option>
-                                <option value="moletom">Moletom</option>
-                                <option value="jaqueta">Jaqueta</option>
-                                <option value="bone">Boné</option>
-                                <option value="acessorio">Acessório</option>
+                                <option value="">Selecione uma categoria</option>
+                                {categories && categories.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -343,17 +343,17 @@ export default function Index({ auth, products, categories, filters }) {
                         <div>
                             <InputLabel value="Categoria" />
                             <select
-                                value={data.category}
-                                onChange={(e) => setData('category', e.target.value)}
+                                value={data.category_id}
+                                onChange={(e) => setData('category_id', e.target.value)}
                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
                                 required
                             >
-                                <option value="camiseta">Camiseta</option>
-                                <option value="polo">Polo</option>
-                                <option value="moletom">Moletom</option>
-                                <option value="jaqueta">Jaqueta</option>
-                                <option value="bone">Boné</option>
-                                <option value="acessorio">Acessório</option>
+                                <option value="">Selecione uma categoria</option>
+                                {categories && categories.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>

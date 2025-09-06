@@ -635,6 +635,34 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 <span className="nav-text">🛡️ Admin</span>
                                             </NavLink>
 
+                                    {/* Manager Dashboard */}
+                                    {(user.role === "manager" || user.role === "admin") && (
+                                        <NavLink
+                                            href={route("manager.dashboard")}
+                                            active={route().current("manager.*")}
+                                            className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
+                                                route().current("manager.*")
+                                                    ? "active"
+                                                    : ""
+                                            }`}
+                                        >
+                                            <svg
+                                                className="nav-icon icon-hover"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                                />
+                                            </svg>
+                                            <span className="nav-text">🏢 Gerência</span>
+                                        </NavLink>
+                                    )}
+
                                             <NavLink
                                                 href={route("admin.users.index")}
                                                 active={route().current(
@@ -1001,6 +1029,30 @@ export default function AuthenticatedLayout({ header, children }) {
                                         </svg>
                                         🛡️ Admin Dashboard
                                     </ResponsiveNavLink>
+
+                            {/* Manager Dashboard Mobile */}
+                            {(user.role === "manager" || user.role === "admin") && (
+                                <ResponsiveNavLink
+                                    href={route("manager.dashboard")}
+                                    active={route().current("manager.*")}
+                                    className="mobile-nav-item flex items-center gap-3 px-4 py-3 rounded-xl"
+                                >
+                                    <svg
+                                        className="w-4 h-4 icon-hover"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                        />
+                                    </svg>
+                                    🏢 Dashboard Gerencial
+                                </ResponsiveNavLink>
+                            )}
 
                                     <ResponsiveNavLink
                                         href={route("admin.users.index")}

@@ -33,10 +33,16 @@ class Sale extends Model
         'client_email',
         'client_phone',
         'client_cpf',
+        'product_category_id',
+        'product_size',
+        'product_price',
         'child_name',
         'embroidery_position',
         'embroidery_color',
         'embroidery_font',
+        'embroidery_type',
+        'embroidery_design_id',
+        'embroidery_text',
         'total_amount',
         'shipping_amount',
         'payment_method',
@@ -164,6 +170,16 @@ class Sale extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+    
+    public function productCategory(): BelongsTo
+    {
+        return $this->belongsTo(ProductCategory::class, 'product_category_id');
+    }
+
+    public function embroideryDesign(): BelongsTo
+    {
+        return $this->belongsTo(EmbroideryDesign::class, 'embroidery_design_id');
     }
     
     public function approvedBy(): BelongsTo
@@ -298,12 +314,12 @@ class Sale extends Model
 
     public function getRemainingAmount(): float
     {
-        return $this->total_amount - $this->getTotalPaidAmount();
+        return ($this->total_amount + $this->shipping_amount) - $this->getTotalPaidAmount();
     }
 
     public function isFullyPaid(): bool
     {
-        return $this->getTotalPaidAmount() >= $this->total_amount;
+        return $this->getTotalPaidAmount() >= ($this->total_amount + $this->shipping_amount);
     }
 
     public function hasPartialPayments(): bool
@@ -313,10 +329,11 @@ class Sale extends Model
 
     public function getPaymentProgress(): float
     {
-        if ($this->total_amount <= 0) {
+        $totalWithShipping = $this->total_amount + $this->shipping_amount;
+        if ($totalWithShipping <= 0) {
             return 0;
         }
-        return ($this->getTotalPaidAmount() / $this->total_amount) * 100;
+        return ($this->getTotalPaidAmount() / $totalWithShipping) * 100;
     }
 
     public function getPaymentStatus(): string

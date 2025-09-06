@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatBRL } from '@/utils/currency';
 import toast from 'react-hot-toast';
 
 export default function OrdersIndex({ orders, statusFilter }) {
@@ -26,8 +27,26 @@ export default function OrdersIndex({ orders, statusFilter }) {
     const handleStartProduction = (order) => {
         post(route('production.orders.start', order.id), {
             onSuccess: () => {
-                toast.success('Produção iniciada!');
+                toast.success('Produção iniciada com sucesso!');
                 setShowModal(false);
+                // Reload the page to show updated data
+                window.location.reload();
+            },
+            onError: (errors) => {
+                console.error('Error starting production:', errors);
+                if (errors.error) {
+                    toast.error(errors.error);
+                } else if (errors.validation) {
+                    toast.error('Erro de validação: ' + errors.validation.join(', '));
+                } else {
+                    toast.error('Erro ao iniciar produção. Tente novamente.');
+                }
+            },
+            onStart: () => {
+                toast.loading('Iniciando produção...');
+            },
+            onFinish: () => {
+                toast.dismiss();
             }
         });
     };
@@ -101,9 +120,10 @@ export default function OrdersIndex({ orders, statusFilter }) {
                             e.stopPropagation();
                             handleStartProduction(order);
                         }}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        disabled={processing}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Iniciar Produção
+                        {processing ? 'Processando...' : 'Iniciar Produção'}
                     </button>
                 );
             case 'in_production':
@@ -137,11 +157,18 @@ export default function OrdersIndex({ orders, statusFilter }) {
         }
     };
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(amount);
+    // Helper function to get financial summary for an order
+    const getFinancialSummary = (order) => {
+        const totalAmount = parseFloat(order.total_amount) + parseFloat(order.shipping_amount || 0);
+        const paidAmount = order.payments ? order.payments.filter(p => p.status === 'approved').reduce((sum, p) => sum + parseFloat(p.amount), 0) : parseFloat(order.received_amount || 0);
+        const remainingAmount = Math.max(0, totalAmount - paidAmount);
+        
+        return {
+            totalAmount,
+            paidAmount,
+            remainingAmount,
+            isFullyPaid: remainingAmount <= 0
+        };
     };
 
     const formatDate = (date) => {
@@ -255,12 +282,41 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         </div>
 
                                         <div className="border-t pt-4 mb-4">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-sm text-gray-600">Valor:</span>
-                                                <span className="font-semibold text-gray-900">
-                                                    {formatCurrency(order.total_amount)}
-                                                </span>
-                                            </div>
+                                            {(() => {
+                                                const financial = getFinancialSummary(order);
+                                                return (
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-sm text-gray-600">Total com Frete:</span>
+                                                            <span className="font-semibold text-gray-900">
+                                                                {formatBRL(financial.totalAmount)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-sm text-gray-600">Valor Pago:</span>
+                                                            <span className={`font-medium ${financial.paidAmount > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                                                                {formatBRL(financial.paidAmount)}
+                                                            </span>
+                                                        </div>
+                                                        {financial.remainingAmount > 0 && (
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-sm text-gray-600">Restante:</span>
+                                                                <span className="font-medium text-orange-600">
+                                                                    {formatBRL(financial.remainingAmount)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {order.payment_date && (
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <span className="text-gray-500">Pago em:</span>
+                                                                <span className="text-gray-700">
+                                                                    {formatDate(order.payment_date)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         <div className="flex justify-center">
@@ -358,6 +414,53 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                                     )}
                                                 </p>
                                             </div>
+                                        </div>
+
+                                        {/* Financial Information */}
+                                        <h4 className="text-lg font-semibold mt-6 mb-4">Informações Financeiras</h4>
+                                        <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
+                                            {(() => {
+                                                const financial = getFinancialSummary(selectedOrder);
+                                                return (
+                                                    <>
+                                                        <div className="flex justify-between items-center">
+                                                            <label className="text-sm font-medium text-gray-600">Total com Frete:</label>
+                                                            <span className="font-semibold text-gray-900">
+                                                                {formatBRL(financial.totalAmount)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <label className="text-sm font-medium text-gray-600">Valor Pago:</label>
+                                                            <span className={`font-medium ${financial.paidAmount > 0 ? 'text-green-700' : 'text-gray-500'}`}>
+                                                                {formatBRL(financial.paidAmount)}
+                                                            </span>
+                                                        </div>
+                                                        {financial.remainingAmount > 0 && (
+                                                            <div className="flex justify-between items-center">
+                                                                <label className="text-sm font-medium text-gray-600">Valor Restante:</label>
+                                                                <span className="font-medium text-orange-700">
+                                                                    {formatBRL(financial.remainingAmount)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {selectedOrder.payment_date && (
+                                                            <div className="flex justify-between items-center">
+                                                                <label className="text-sm font-medium text-gray-600">Data do Pagamento:</label>
+                                                                <span className="text-gray-700">
+                                                                    {formatDate(selectedOrder.payment_date)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {financial.isFullyPaid && (
+                                                            <div className="text-center">
+                                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                                    ✅ Pagamento Completo
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
 

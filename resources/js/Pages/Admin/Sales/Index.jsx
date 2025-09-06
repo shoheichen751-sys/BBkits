@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
+import { formatBRL } from '@/utils/currency';
 import toast from 'react-hot-toast';
 
 export default function Index({ sales }) {
@@ -69,12 +70,7 @@ export default function Index({ sales }) {
         );
     };
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(amount);
-    };
+    // Use centralized currency formatting
 
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString('pt-BR');
@@ -672,10 +668,10 @@ export default function Index({ sales }) {
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-6 py-4 text-sm font-bold text-green-600">
-                                                                    {formatCurrency(sale.total_amount)}
+                                                                    {formatBRL(sale.total_amount)}
                                                                 </td>
                                                                 <td className="px-6 py-4 text-sm font-bold text-blue-600">
-                                                                    {formatCurrency(sale.received_amount)}
+                                                                    {formatBRL(sale.received_amount)}
                                                                 </td>
                                                                 <td className="px-6 py-4 text-sm text-gray-600 font-medium">
                                                                     📅 {formatDate(sale.payment_date)}
@@ -716,22 +712,59 @@ export default function Index({ sales }) {
                                                                             sale.receipt_data ? (
                                                                                 <button
                                                                                     onClick={() => {
-                                                                                        // Open base64 image in new tab
-                                                                                        const newWindow = window.open();
-                                                                                        newWindow.document.write(`
-                                                                                            <html>
-                                                                                                <head><title>Comprovante de Pagamento</title></head>
-                                                                                                <body style="margin:0; padding:20px; text-align:center; background:#f5f5f5;">
-                                                                                                    <h2>Comprovante de Pagamento</h2>
-                                                                                                    <img src="${sale.receipt_data}" style="max-width:100%; height:auto; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);" />
-                                                                                                </body>
-                                                                                            </html>
-                                                                                        `);
+                                                                                        // Create a more secure way to view base64 images
+                                                                                        try {
+                                                                                            const newWindow = window.open('', '_blank');
+                                                                                            if (newWindow) {
+                                                                                                newWindow.document.open();
+                                                                                                newWindow.document.write(`
+                                                                                                    <!DOCTYPE html>
+                                                                                                    <html>
+                                                                                                        <head>
+                                                                                                            <title>Comprovante de Pagamento - ${sale.client_name}</title>
+                                                                                                            <meta charset="UTF-8">
+                                                                                                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                                                                                            <style>
+                                                                                                                body { 
+                                                                                                                    margin: 0; 
+                                                                                                                    padding: 20px; 
+                                                                                                                    text-align: center; 
+                                                                                                                    background: #f5f5f5; 
+                                                                                                                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                                                                                                }
+                                                                                                                h2 { color: #374151; margin-bottom: 20px; }
+                                                                                                                img { 
+                                                                                                                    max-width: 100%; 
+                                                                                                                    height: auto; 
+                                                                                                                    border-radius: 8px; 
+                                                                                                                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                                                                                                                    background: white;
+                                                                                                                    padding: 10px;
+                                                                                                                }
+                                                                                                                .info { color: #6B7280; margin-bottom: 15px; }
+                                                                                                            </style>
+                                                                                                        </head>
+                                                                                                        <body>
+                                                                                                            <h2>💰 Comprovante de Pagamento</h2>
+                                                                                                            <div class="info"><strong>Cliente:</strong> ${sale.client_name}</div>
+                                                                                                            <div class="info"><strong>Valor:</strong> ${formatBRL(sale.total_amount)}</div>
+                                                                                                            <img src="${sale.receipt_data}" alt="Comprovante de Pagamento" />
+                                                                                                        </body>
+                                                                                                    </html>
+                                                                                                `);
+                                                                                                newWindow.document.close();
+                                                                                            } else {
+                                                                                                toast.error('Não foi possível abrir o comprovante. Verifique se o pop-up não foi bloqueado.');
+                                                                                            }
+                                                                                        } catch (error) {
+                                                                                            console.error('Error opening receipt:', error);
+                                                                                            toast.error('Erro ao abrir comprovante. Tente novamente.');
+                                                                                        }
                                                                                     }}
                                                                                     className="action-btn action-btn-receipt"
                                                                                 >
                                                                                     <i className="fas fa-file-image mr-1"></i>
-                                                                                    Comprovante
+                                                                                    Ver Comprovante
                                                                                 </button>
                                                                             ) : (
                                                                                 <a
@@ -741,7 +774,7 @@ export default function Index({ sales }) {
                                                                                     className="action-btn action-btn-receipt"
                                                                                 >
                                                                                     <i className="fas fa-file-pdf mr-1"></i>
-                                                                                    Comprovante
+                                                                                    Ver Comprovante
                                                                                 </a>
                                                                             )
                                                                         )}
@@ -835,7 +868,7 @@ export default function Index({ sales }) {
                                     </div>
                                     <div>
                                         <p className="font-semibold text-red-900">Cliente: {selectedSale?.client_name}</p>
-                                        <p className="text-red-700 text-sm">Valor: {selectedSale && formatCurrency(selectedSale.received_amount)}</p>
+                                        <p className="text-red-700 text-sm">Valor: {selectedSale && formatBRL(selectedSale.received_amount)}</p>
                                     </div>
                                 </div>
                             </div>

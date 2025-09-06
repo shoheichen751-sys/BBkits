@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'finance.access' => \App\Http\Middleware\FinanceAccess::class,
             'finance.admin' => \App\Http\Middleware\FinanceAdminMiddleware::class,
             'production.admin' => \App\Http\Middleware\ProductionAdminMiddleware::class,
+            'manager' => \App\Http\Middleware\ManagerMiddleware::class,
         ]);
     })
     ->withCommands([

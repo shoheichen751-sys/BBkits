@@ -36,7 +36,10 @@ class SaleController extends Controller
             ->paginate(10);
 
         return Inertia::render('Sales/Index', [
-            'sales' => $sales
+            'sales' => $sales,
+            'auth' => [
+                'user' => auth()->user()
+            ]
         ]);
     }
 
@@ -107,11 +110,19 @@ class SaleController extends Controller
             'client_phone' => 'required|string|max:20',
             'client_cpf' => 'nullable|string|max:14',
             
+            // Product info - OPTIONAL (only for CreateExpanded form)
+            'product_category' => 'nullable|exists:product_categories,id',
+            'product_size' => 'nullable|in:P,M,G,GG',
+            'product_price' => 'nullable|numeric|min:0',
+            
             // Child & embroidery - REQUIRED
             'child_name' => 'required|string|max:255',
+            'embroidery_type' => 'nullable|in:text,design,both',
             'embroidery_position' => 'required|string|max:255', // Now accepts ID or name
             'embroidery_color' => 'required|string|max:255',    // Now accepts ID or name
             'embroidery_font' => 'nullable|string|max:255',     // Now accepts ID or name
+            'embroidery_design_id' => 'nullable|exists:embroidery_designs,id',
+            'embroidery_text' => 'nullable|string|max:255',
             
             // Payment - REQUIRED
             'total_amount' => 'required|numeric|min:0',
@@ -119,7 +130,7 @@ class SaleController extends Controller
             'payment_method' => 'required|in:pix,boleto,cartao,dinheiro',
             'received_amount' => 'required|numeric|min:0',
             'payment_date' => 'required|date',
-            'payment_receipt' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            'payment_receipt' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
             
             // Delivery address - OPTIONAL (customer fills later)
             'delivery_address' => 'nullable|string|max:255',
@@ -149,6 +160,17 @@ class SaleController extends Controller
             // Still store the file path for backward compatibility
             $validated['payment_receipt'] = $request->file('payment_receipt')->store('receipts', 'public');
             $validated['initial_payment_proof'] = $validated['payment_receipt'];
+        }
+
+        // Map product_category to product_category_id for database storage
+        if (isset($validated['product_category'])) {
+            $validated['product_category_id'] = $validated['product_category'];
+            unset($validated['product_category']);
+        }
+        
+        // Handle embroidery type for backward compatibility
+        if (!isset($validated['embroidery_type']) || empty($validated['embroidery_type'])) {
+            $validated['embroidery_type'] = 'text'; // Default to text for existing behavior
         }
 
         $validated['user_id'] = auth()->id();
@@ -218,9 +240,11 @@ class SaleController extends Controller
             
             // Embroidery per product (optional)
             'products.*.has_embroidery' => 'boolean',
+            'products.*.embroidery_type' => 'nullable|in:text,design,both',
             'products.*.embroidery_text' => 'nullable|string|max:255',
             'products.*.embroidery_font_id' => 'nullable|exists:embroidery_fonts,id',
             'products.*.embroidery_color_id' => 'nullable|exists:embroidery_colors,id',
+            'products.*.embroidery_design_id' => 'nullable|exists:embroidery_designs,id',
             'products.*.embroidery_position' => 'nullable|string|max:100',
             'products.*.embroidery_cost' => 'nullable|numeric|min:0',
             
@@ -354,6 +378,7 @@ class SaleController extends Controller
                 'user', 
                 'approvedBy', 
                 'rejectedBy',
+                'productCategory',
                 'saleProducts.product',
                 'saleProducts.embroideryFont',
                 'saleProducts.embroideryColor'
