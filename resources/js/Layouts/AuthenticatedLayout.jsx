@@ -725,13 +725,9 @@ export default function AuthenticatedLayout({ header, children }) {
 
                                             <NavLink
                                                 href="/admin/embroidery"
-                                                active={route().current(
-                                                    "admin.embroidery.*"
-                                                )}
+                                                active={window.location.pathname.includes('/admin/embroidery')}
                                                 className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                    route().current(
-                                                        "admin.embroidery.*"
-                                                    )
+                                                    window.location.pathname.includes('/admin/embroidery')
                                                         ? "active"
                                                         : ""
                                                 }`}
@@ -1102,9 +1098,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
                                     <ResponsiveNavLink
                                         href="/admin/embroidery"
-                                        active={route().current(
-                                            "admin.embroidery.*"
-                                        )}
+                                        active={window.location.pathname.includes('/admin/embroidery')}
                                         className="mobile-nav-item flex items-center gap-3 px-4 py-3 rounded-xl"
                                     >
                                         <svg

@@ -463,7 +463,7 @@ export default function CreateExpanded() {
                                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
                                         <span className="ml-3 text-gray-600">Carregando produtos...</span>
                                     </div>
-                                ) : products.length === 0 ? (
+                                ) : availableProducts.length === 0 ? (
                                     <div className="text-center py-8">
                                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -477,7 +477,7 @@ export default function CreateExpanded() {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {products.map((product) => (
+                                        {availableProducts.map((product) => (
                                             <div
                                                 key={product.id}
                                                 onClick={() => handleProductSelect(product)}
@@ -586,7 +586,7 @@ export default function CreateExpanded() {
                                             {loadingOptions ? (
                                                 <option>Carregando...</option>
                                             ) : (
-                                                products.map((product) => (
+                                                availableProducts.map((product) => (
                                                     <option key={product.id} value={product.id}>
                                                         {product.name} - {formatBRL(product.price)}
                                                     </option>

@@ -42,7 +42,7 @@ export default function Index({ auth, designs, categories, filters }) {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get('/admin/embroidery/designs', {
+        router.get(route('admin.embroidery.designs.index'), {
             search,
             category,
             status
@@ -54,7 +54,7 @@ export default function Index({ auth, designs, categories, filters }) {
 
     const handleCreate = (e) => {
         e.preventDefault();
-        post('/admin/embroidery/designs', {
+        post(route('admin.embroidery.designs.store'), {
             onSuccess: () => {
                 setShowCreateModal(false);
                 resetCreate();
@@ -64,7 +64,8 @@ export default function Index({ auth, designs, categories, filters }) {
 
     const handleEdit = (e) => {
         e.preventDefault();
-        put(`/admin/embroidery/designs/${editingDesign.id}`, {
+        if (!editingDesign || !editingDesign.id) return;
+        put(route('admin.embroidery.designs.update', editingDesign.id), {
             onSuccess: () => {
                 setShowEditModal(false);
                 setEditingDesign(null);
@@ -74,8 +75,9 @@ export default function Index({ auth, designs, categories, filters }) {
     };
 
     const handleDelete = (design) => {
+        if (!design || !design.id) return;
         if (confirm(`Tem certeza que deseja excluir o design "${design.name}"?`)) {
-            destroy(`/admin/embroidery/designs/${design.id}`);
+            destroy(route('admin.embroidery.designs.destroy', design.id));
         }
     };
 
@@ -119,7 +121,7 @@ export default function Index({ auth, designs, categories, filters }) {
                         Gerenciar Designs de Bordado
                     </h2>
                     <Link
-                        href="/admin/embroidery"
+                        href={route('admin.embroidery.dashboard')}
                         className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                     >
                         Voltar ao Dashboard
