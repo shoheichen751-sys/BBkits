@@ -86,7 +86,7 @@ export default function Index({ auth, fonts, filters }) {
                 <div className="flex justify-between items-center">
                     <h2 className="font-semibold text-xl text-gray-800 leading-tight">Fontes de Bordado</h2>
                     <Link
-                        href="/admin/embroidery"
+                        href={route('admin.embroidery.dashboard')}
                         className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                     >
                         Voltar ao Dashboard
