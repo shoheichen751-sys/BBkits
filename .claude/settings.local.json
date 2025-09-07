@@ -18,7 +18,9 @@
       "Bash(curl:*)",
       "Bash(php:*)",
       "Bash(sudo apt-get:*)",
-      "Bash(sudo apt-get install:*)"
+      "Bash(sudo apt-get install:*)",
+      "Bash(sed:*)",
+      "WebFetch(domain:127.0.0.1)"
     ],
     "deny": [],
     "additionalDirectories": [
