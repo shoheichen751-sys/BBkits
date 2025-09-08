@@ -38,7 +38,7 @@ export default function Index({ auth, designs, categories, filters }) {
         compatible_colors: []
     });
 
-    const deleteForm = useForm();
+    // Removed problematic useForm for delete
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -75,10 +75,13 @@ export default function Index({ auth, designs, categories, filters }) {
     };
 
     const handleDelete = (design) => {
-        if (!design || !design.id) return;
-        if (confirm(`Tem certeza que deseja excluir o design "${design.name}"?`)) {
-            deleteForm.delete(route('admin.embroidery.designs.destroy', design.id));
-        }
+        alert('Função de deletar temporariamente desabilitada');
+        return;
+        // Commented out to avoid useForm issues
+        // if (!design || !design.id) return;
+        // if (confirm(`Tem certeza que deseja excluir o design "${design.name}"?`)) {
+        //     router.delete(route('admin.embroidery.designs.destroy', design.id));
+        // }
     };
 
     const openEditModal = (design) => {

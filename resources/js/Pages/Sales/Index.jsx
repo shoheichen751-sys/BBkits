@@ -10,7 +10,7 @@ import { formatBRL } from '@/utils/currency';
 export default function Index({ sales, auth }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [saleToDelete, setSaleToDelete] = useState(null);
-    const { delete: destroy, processing } = useForm();
+    const { delete: destroy, processing } = useForm({});
 
     const handleDeleteClick = (sale) => {
         setSaleToDelete(sale);
