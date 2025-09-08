@@ -702,12 +702,12 @@ export default function CreateExpanded() {
                                                     <img
                                                         src={product.image_url && product.image_url.trim() !== '' 
                                                             ? product.image_url 
-                                                            : 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem'}
+                                                            : 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop'}
                                                         alt={product.name}
                                                         className="w-full h-32 object-cover rounded-md transition-opacity duration-200"
                                                         onError={(e) => {
-                                                            if (e.target.src !== 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem') {
-                                                                e.target.src = 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem';
+                                                            if (e.target.src !== 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop') {
+                                                                e.target.src = 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop';
                                                             }
                                                         }}
                                                     />
