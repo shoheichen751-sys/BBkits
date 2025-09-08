@@ -31,6 +31,7 @@ export default function Index({ auth, products, categories, filters }) {
     
     const openAddModal = () => {
         reset();
+        setImagePreview(null);
         setShowAddModal(true);
     };
     
@@ -381,14 +382,14 @@ export default function Index({ auth, products, categories, filters }) {
                                 onChange={handleImageChange}
                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             />
-                            {imagePreview && (
-                                <div className="mt-3">
-                                    <div className="flex items-start space-x-3">
-                                        <img 
-                                            src={imagePreview} 
-                                            alt="Preview" 
-                                            className="w-20 h-20 object-cover rounded-lg border border-gray-300" 
-                                        />
+                            <div className="mt-3">
+                                <div className="flex items-start space-x-3">
+                                    <img 
+                                        src={imagePreview || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=80&h=80&fit=crop'} 
+                                        alt="Preview" 
+                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300" 
+                                    />
+                                    {imagePreview && (
                                         <button
                                             type="button"
                                             onClick={clearImage}
@@ -396,9 +397,14 @@ export default function Index({ auth, products, categories, filters }) {
                                         >
                                             Remover imagem
                                         </button>
-                                    </div>
+                                    )}
+                                    {!imagePreview && (
+                                        <div className="text-sm text-gray-500 pt-2">
+                                            Imagem padrão será usada
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                     
@@ -532,14 +538,14 @@ export default function Index({ auth, products, categories, filters }) {
                                 onChange={handleImageChange}
                                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             />
-                            {imagePreview && (
-                                <div className="mt-3">
-                                    <div className="flex items-start space-x-3">
-                                        <img 
-                                            src={imagePreview} 
-                                            alt="Preview" 
-                                            className="w-20 h-20 object-cover rounded-lg border border-gray-300" 
-                                        />
+                            <div className="mt-3">
+                                <div className="flex items-start space-x-3">
+                                    <img 
+                                        src={imagePreview || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=80&h=80&fit=crop'} 
+                                        alt="Preview" 
+                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300" 
+                                    />
+                                    {imagePreview && (
                                         <button
                                             type="button"
                                             onClick={clearImage}
@@ -547,9 +553,14 @@ export default function Index({ auth, products, categories, filters }) {
                                         >
                                             Remover imagem
                                         </button>
-                                    </div>
+                                    )}
+                                    {!imagePreview && (
+                                        <div className="text-sm text-gray-500 pt-2">
+                                            Imagem padrão será usada
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                     

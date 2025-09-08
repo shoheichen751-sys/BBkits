@@ -84,10 +84,21 @@ class ProductController extends Controller
             unset($validated['colors']);
         }
 
-        // Handle image upload
+        // Handle image upload or set default
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('products', 'public');
             $validated['image_url'] = '/storage/' . $imagePath;
+        } elseif (empty($validated['image_url'])) {
+            // Set default image based on category
+            $categoryName = $request->category_id ? \App\Models\ProductCategory::find($request->category_id)?->name : 'Produto';
+            $defaultImages = [
+                'Bolsas' => 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop',
+                'Mochilas' => 'https://images.unsplash.com/photo-1582017334482-4c4b9c4c4e87?w=300&h=200&fit=crop',
+                'Frasqueiras' => 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=300&h=200&fit=crop',
+                'Malas' => 'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=300&h=200&fit=crop',
+                'Acessórios' => 'https://images.unsplash.com/photo-1556306535-38febf6782e7?w=300&h=200&fit=crop'
+            ];
+            $validated['image_url'] = $defaultImages[$categoryName] ?? 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop';
         }
 
         // Remove the image field from validated data since it's not in the database
@@ -130,7 +141,7 @@ class ProductController extends Controller
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            // Delete old image if it exists
+            // Delete old image if it exists and is uploaded (not external URL)
             if ($product->image_url && str_contains($product->image_url, '/storage/')) {
                 $oldImagePath = str_replace('/storage/', '', $product->image_url);
                 Storage::disk('public')->delete($oldImagePath);
