@@ -330,6 +330,17 @@ export default function Dashboard() {
 
                     <div className="py-12 relative z-10">
                         <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                            {/* Enhanced Ranking Display - Moved to Top for Salespeople */}
+                            {auth.user.role === 'vendedora' && gamification && gamification.ranking && gamification.ranking.length > 0 && (
+                                <div className="mb-12 animate-fadeInUp">
+                                    <RankingDisplay 
+                                        ranking={gamification.ranking}
+                                        currentUser={auth.user}
+                                        showFull={false}
+                                    />
+                                </div>
+                            )}
+
                             {/* Stats Cards */}
                             <div className="grid gap-8 mb-12 md:grid-cols-2 xl:grid-cols-4">
                                 <div className="stat-card animate-fadeInUp">
@@ -800,47 +811,30 @@ export default function Dashboard() {
                                         </div>
                                     )}
 
-                                    {/* Enhanced Ranking Display */}
-                                    {gamification.ranking && gamification.ranking.length > 0 && (
-                                        <div className="mb-8 animate-fadeInUp">
-                                            <RankingDisplay 
-                                                ranking={gamification.ranking}
-                                                currentUser={auth.user}
-                                                showFull={false}
-                                            />
-                                        </div>
-                                    )}
+                                    {/* Enhanced Ranking Display - Removed duplicate */}
                                     
-                                    {/* Top Vendedoras Ranking - For Motivation */}
-                                    {topPerformers && topPerformers.length > 0 && (
-                                        <div className="mb-8 animate-fadeInUp">
-                                            <div className="card-gradient p-8 relative z-10">
-                                                <div className="flex items-center mb-6">
-                                                    <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
-                                                        <span className="text-2xl">🏆</span>
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-2xl font-bold text-gray-800">Top Vendedoras do Mês</h4>
-                                                        <p className="text-gray-600 text-sm">Inspiração para alcançar novos patamares!</p>
-                                                    </div>
+                                    {/* Motivational Message Only - Ranking moved to top */}
+                                    <div className="mb-8 animate-fadeInUp">
+                                        <div className="card-gradient p-8 relative z-10">
+                                            <div className="flex items-center mb-6">
+                                                <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mr-4 shadow-lg">
+                                                    <span className="text-2xl">💪</span>
                                                 </div>
-                                                
-                                                <RankingDisplay 
-                                                    ranking={gamification.ranking}
-                                                    currentUser={auth.user}
-                                                    showFull={true}
-                                                />
-                                                
-                                                {/* Motivational Message */}
-                                                <div className="mt-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 border-l-4 border-pink-400">
-                                                    <p className="text-sm text-gray-700">
-                                                        <span className="font-semibold">💪 Você consegue!</span> Cada venda é um passo mais próximo do topo. 
-                                                        Continue se esforçando e inspire outras vendedoras! ✨
-                                                    </p>
+                                                <div>
+                                                    <h4 className="text-2xl font-bold text-gray-800">Motivação do Dia</h4>
+                                                    <p className="text-gray-600 text-sm">Continue brilhando e alcançando seus objetivos!</p>
                                                 </div>
                                             </div>
+                                            
+                                            {/* Motivational Message */}
+                                            <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 border-l-4 border-pink-400">
+                                                <p className="text-sm text-gray-700">
+                                                    <span className="font-semibold">💪 Você consegue!</span> Cada venda é um passo mais próximo do topo. 
+                                                    Continue se esforçando e inspire outras vendedoras! ✨
+                                                </p>
+                                            </div>
                                         </div>
-                                    )}
+                                    </div>
                                 </>
                             )}
                         </div>

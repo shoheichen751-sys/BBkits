@@ -44,6 +44,7 @@ export default function CreateExpanded() {
 
     const [showPreview, setShowPreview] = useState(false);
     const [receiptPreview, setReceiptPreview] = useState(null);
+    const [validationErrors, setValidationErrors] = useState({});
     
     // Dynamic embroidery options from API
     const [embroideryFonts, setEmbroideryFonts] = useState([]);
@@ -114,6 +115,45 @@ export default function CreateExpanded() {
         fetchOptions();
     }, []);
     
+    // Calculate real-time price for current product being customized
+    const calculateCurrentProductPrice = () => {
+        if (!currentProduct.product_id) return { unitTotal: 0, totalPrice: 0, breakdown: {} };
+        
+        const basePrice = parseFloat(currentProduct.unit_price || 0);
+        const sizePrice = parseFloat(sizePricing[currentProduct.size]?.basePrice || 0);
+        const quantity = parseInt(currentProduct.quantity || 1);
+        
+        let embroideryCost = 0;
+        const selectedFont = embroideryFonts.find(f => f.id == currentProduct.embroidery_font);
+        const selectedColor = embroideryColors.find(c => c.id == currentProduct.embroidery_color);
+        const selectedPosition = embroideryPositions.find(p => p.id == currentProduct.embroidery_position);
+        
+        const fontCost = parseFloat(selectedFont?.additional_cost || 0);
+        const colorCost = parseFloat(selectedColor?.additional_cost || 0);
+        const positionCost = parseFloat(selectedPosition?.additional_cost || 0);
+        
+        embroideryCost = fontCost + colorCost + positionCost;
+        
+        const unitTotal = basePrice + sizePrice + embroideryCost;
+        const totalPrice = unitTotal * quantity;
+        
+        return {
+            unitTotal,
+            totalPrice,
+            breakdown: {
+                basePrice,
+                sizePrice,
+                embroideryCost: {
+                    total: embroideryCost,
+                    font: fontCost,
+                    color: colorCost,
+                    position: positionCost
+                },
+                quantity
+            }
+        };
+    };
+
     // Handle product selection for current product being added
     const handleCurrentProductChange = (productId) => {
         const selectedProd = availableProducts.find(p => p.id == productId);
@@ -142,8 +182,10 @@ export default function CreateExpanded() {
             return;
         }
         
-        // Calculate product total with embroidery and size pricing
-        const sizePrice = sizePricing[currentProduct.size]?.basePrice || 0;
+        // Calculate product total with embroidery and size pricing - ensure all values are numbers
+        const basePrice = parseFloat(currentProduct.unit_price || 0);
+        const sizePrice = parseFloat(sizePricing[currentProduct.size]?.basePrice || 0);
+        const quantity = parseInt(currentProduct.quantity || 1);
         
         let embroideryCost = 0;
         const selectedFont = embroideryFonts.find(f => f.id == currentProduct.embroidery_font);
@@ -154,15 +196,26 @@ export default function CreateExpanded() {
         if (selectedColor) embroideryCost += parseFloat(selectedColor.additional_cost || 0);
         if (selectedPosition) embroideryCost += parseFloat(selectedPosition.additional_cost || 0);
         
-        const productTotal = (currentProduct.unit_price + sizePrice + embroideryCost) * currentProduct.quantity;
+        const unitTotal = basePrice + sizePrice + embroideryCost;
+        const productTotal = unitTotal * quantity;
         
-        // Add to cart
+        console.log('🧮 Calculation Debug:', {
+            basePrice, sizePrice, embroideryCost, quantity, unitTotal, productTotal,
+            fontCost: selectedFont?.additional_cost || 0,
+            colorCost: selectedColor?.additional_cost || 0,
+            positionCost: selectedPosition?.additional_cost || 0
+        });
+        
+        // Add to cart with properly calculated values
         const newProduct = {
             ...currentProduct,
             id: Date.now(), // Unique ID for cart item
+            unit_price: basePrice, // Ensure it's a number
             size_price: sizePrice,
             embroidery_cost: embroideryCost,
-            total_price: productTotal
+            quantity: quantity,
+            unit_total: unitTotal, // Price per unit including all costs
+            total_price: productTotal // Total price including quantity
         };
         
         setData('products', [...data.products, newProduct]);
@@ -195,11 +248,23 @@ export default function CreateExpanded() {
     // Calculate total from all products in cart plus shipping
     useEffect(() => {
         const calculateTotal = () => {
-            const productsTotal = data.products.reduce((sum, product) => sum + product.total_price, 0);
+            const productsTotal = data.products.reduce((sum, product) => sum + parseFloat(product.total_price || 0), 0);
             const shippingAmount = parseFloat(data.shipping_amount || 0);
             const totalAmount = productsTotal + shippingAmount;
             setTotalWithEmbroidery(totalAmount);
             setData('total_amount', totalAmount.toFixed(2));
+            
+            console.log('💰 Total Calculation:', {
+                productsCount: data.products.length,
+                productsTotal,
+                shippingAmount,
+                totalAmount,
+                products: data.products.map(p => ({ 
+                    name: p.product_name, 
+                    total: p.total_price, 
+                    qty: p.quantity 
+                }))
+            });
         };
         
         calculateTotal();
@@ -224,53 +289,179 @@ export default function CreateExpanded() {
     const parseBrazilianCurrencyValue = parseBrazilianCurrency;
 
     const validateForm = () => {
-        const requiredFields = [
-            'client_name', 'client_email', 'client_phone',
-            'child_name', 'shipping_amount', 'received_amount', 'payment_date', 'payment_method'
-        ];
+        const errors = [];
         
-        // Check if products array has items
-        if (data.products && data.products.length === 0) {
-            toast.error('Por favor, adicione pelo menos um produto ao carrinho');
-            return;
+        // 1. Validate Cart/Products First (most important)
+        if (!data.products || data.products.length === 0) {
+            errors.push({
+                field: 'products',
+                message: '🛍️ Por favor, adicione pelo menos um produto ao carrinho',
+                section: 'Produtos'
+            });
+        } else {
+            // Validate each product in cart
+            data.products.forEach((product, index) => {
+                if (!product.embroidery_text || !product.embroidery_text.trim()) {
+                    errors.push({
+                        field: `products[${index}].embroidery_text`,
+                        message: `📝 Produto "${product.product_name}" precisa de um nome para bordado`,
+                        section: 'Produtos'
+                    });
+                }
+            });
         }
-
-        const missingFields = requiredFields.filter(field => !data[field]);
         
-        if (missingFields.length > 0) {
-            toast.error('Por favor, preencha todos os campos obrigatórios');
+        // 2. Validate Client Information
+        if (!data.client_name || !data.client_name.trim()) {
+            errors.push({
+                field: 'client_name',
+                message: '👤 Nome da cliente é obrigatório',
+                section: 'Dados da Cliente'
+            });
+        }
+        
+        if (!data.client_email || !data.client_email.trim()) {
+            errors.push({
+                field: 'client_email', 
+                message: '📧 E-mail da cliente é obrigatório',
+                section: 'Dados da Cliente'
+            });
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(data.client_email)) {
+                errors.push({
+                    field: 'client_email',
+                    message: '📧 Por favor, insira um e-mail válido (ex: cliente@email.com)',
+                    section: 'Dados da Cliente'
+                });
+            }
+        }
+        
+        if (!data.client_phone || !data.client_phone.trim()) {
+            errors.push({
+                field: 'client_phone',
+                message: '📱 Telefone da cliente é obrigatório',
+                section: 'Dados da Cliente'
+            });
+        } else {
+            const phoneRegex = /^\d{10,11}$/;
+            const cleanPhone = data.client_phone.replace(/\D/g, '');
+            if (!phoneRegex.test(cleanPhone)) {
+                errors.push({
+                    field: 'client_phone',
+                    message: '📱 Telefone deve ter 10 ou 11 dígitos (ex: (11) 98765-4321)',
+                    section: 'Dados da Cliente'
+                });
+            }
+        }
+        
+        // Validate CPF if provided
+        if (data.client_cpf && data.client_cpf.trim()) {
+            const cpfRegex = /^\d{11}$/;
+            const cleanCPF = data.client_cpf.replace(/\D/g, '');
+            if (!cpfRegex.test(cleanCPF)) {
+                errors.push({
+                    field: 'client_cpf',
+                    message: '🆔 CPF deve ter 11 dígitos (ex: 123.456.789-00)',
+                    section: 'Dados da Cliente'
+                });
+            }
+        }
+        
+        // 3. Validate Child Information
+        if (!data.child_name || !data.child_name.trim()) {
+            errors.push({
+                field: 'child_name',
+                message: '👶 Nome da criança é obrigatório para personalização',
+                section: 'Dados da Criança'
+            });
+        }
+        
+        // 4. Validate Payment Information
+        if (!data.shipping_amount || parseFloat(data.shipping_amount) < 0) {
+            errors.push({
+                field: 'shipping_amount',
+                message: '🚚 Valor do frete é obrigatório e deve ser maior ou igual a zero',
+                section: 'Pagamento'
+            });
+        }
+        
+        if (!data.received_amount || parseFloat(data.received_amount) <= 0) {
+            errors.push({
+                field: 'received_amount',
+                message: '💰 Valor recebido é obrigatório e deve ser maior que zero',
+                section: 'Pagamento'
+            });
+        }
+        
+        if (!data.payment_date) {
+            errors.push({
+                field: 'payment_date',
+                message: '📅 Data do pagamento é obrigatória',
+                section: 'Pagamento'
+            });
+        }
+        
+        if (!data.payment_method) {
+            errors.push({
+                field: 'payment_method',
+                message: '💳 Forma de pagamento deve ser selecionada',
+                section: 'Pagamento'
+            });
+        }
+        
+        // 5. Validate Amount Logic
+        const totalAmount = parseFloat(data.total_amount || 0);
+        const receivedAmount = parseFloat(data.received_amount || 0);
+        
+        if (receivedAmount > totalAmount && totalAmount > 0) {
+            errors.push({
+                field: 'received_amount',
+                message: `💰 Valor recebido (${formatBRL(receivedAmount)}) não pode ser maior que o total (${formatBRL(totalAmount)})`,
+                section: 'Pagamento'
+            });
+        }
+        
+        // Display errors if any
+        if (errors.length > 0) {
+            // Set validation error state for field highlighting
+            const errorFields = {};
+            errors.forEach(error => {
+                errorFields[error.field] = error.message;
+            });
+            setValidationErrors(errorFields);
+            
+            // Show first error as main message
+            toast.error(errors[0].message);
+            
+            // Log all errors for debugging
+            console.log('❌ Validation Errors:', errors);
+            
+            // If multiple errors, show summary
+            if (errors.length > 1) {
+                setTimeout(() => {
+                    toast.error(`⚠️ Total de ${errors.length} erros encontrados. Verifique todos os campos destacados.`);
+                }, 1000);
+            }
+            
+            // Scroll to first error field
+            setTimeout(() => {
+                const firstErrorField = document.querySelector(`[name="${errors[0].field}"], #${errors[0].field}`);
+                if (firstErrorField) {
+                    firstErrorField.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    firstErrorField.focus();
+                }
+            }, 500);
+            
             return false;
         }
-
-        // Validate email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.client_email)) {
-            toast.error('Por favor, insira um e-mail válido');
-            return false;
-        }
-
-        // Validate phone
-        const phoneRegex = /^\d{10,11}$/;
-        const cleanPhone = data.client_phone.replace(/\D/g, '');
-        if (!phoneRegex.test(cleanPhone)) {
-            toast.error('Por favor, insira um telefone válido');
-            return false;
-        }
-
-        // Validate CPF
-        const cpfRegex = /^\d{11}$/;
-        const cleanCPF = data.client_cpf.replace(/\D/g, '');
-        if (data.client_cpf && !cpfRegex.test(cleanCPF)) {
-            toast.error('Por favor, insira um CPF válido');
-            return false;
-        }
-
-        // Validate amounts
-        if (parseFloat(data.received_amount) > parseFloat(data.total_amount)) {
-            toast.error('Valor recebido não pode ser maior que o valor total');
-            return false;
-        }
-
+        
+        // Clear validation errors on success
+        setValidationErrors({});
+        console.log('✅ Form validation passed');
         return true;
     };
 
@@ -386,14 +577,27 @@ export default function CreateExpanded() {
                                         </label>
                                         <input
                                             type="text"
+                                            name="client_name"
                                             value={data.client_name}
-                                            onChange={e => setData('client_name', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            onChange={e => {
+                                                setData('client_name', e.target.value);
+                                                // Clear error when user starts typing
+                                                if (validationErrors.client_name) {
+                                                    setValidationErrors(prev => ({ ...prev, client_name: undefined }));
+                                                }
+                                            }}
+                                            className={`w-full rounded-lg focus:ring-purple-500 ${
+                                                validationErrors.client_name 
+                                                    ? 'border-red-500 focus:border-red-500 bg-red-50' 
+                                                    : 'border-gray-300 focus:border-purple-500'
+                                            }`}
                                             placeholder="Maria Silva"
                                             required
                                         />
-                                        {errors.client_name && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.client_name}</p>
+                                        {(errors.client_name || validationErrors.client_name) && (
+                                            <p className="text-red-500 text-sm mt-1">
+                                                {validationErrors.client_name || errors.client_name}
+                                            </p>
                                         )}
                                     </div>
 
@@ -403,14 +607,26 @@ export default function CreateExpanded() {
                                         </label>
                                         <input
                                             type="email"
+                                            name="client_email"
                                             value={data.client_email}
-                                            onChange={e => setData('client_email', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            onChange={e => {
+                                                setData('client_email', e.target.value);
+                                                if (validationErrors.client_email) {
+                                                    setValidationErrors(prev => ({ ...prev, client_email: undefined }));
+                                                }
+                                            }}
+                                            className={`w-full rounded-lg focus:ring-purple-500 ${
+                                                validationErrors.client_email 
+                                                    ? 'border-red-500 focus:border-red-500 bg-red-50' 
+                                                    : 'border-gray-300 focus:border-purple-500'
+                                            }`}
                                             placeholder="maria@email.com"
                                             required
                                         />
-                                        {errors.client_email && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.client_email}</p>
+                                        {(errors.client_email || validationErrors.client_email) && (
+                                            <p className="text-red-500 text-sm mt-1">
+                                                {validationErrors.client_email || errors.client_email}
+                                            </p>
                                         )}
                                     </div>
 
@@ -480,16 +696,16 @@ export default function CreateExpanded() {
                                         {availableProducts.map((product) => (
                                             <div
                                                 key={product.id}
-                                                onClick={() => handleProductSelect(product)}
+                                                onClick={() => handleCurrentProductChange(product.id)}
                                                 className={`
                                                     relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 hover:shadow-lg
-                                                    ${selectedProduct?.id === product.id 
+                                                    ${currentProduct.product_id == product.id 
                                                         ? 'border-purple-500 bg-purple-50 shadow-md' 
                                                         : 'border-gray-200 hover:border-purple-300'
                                                     }
                                                 `}
                                             >
-                                                {selectedProduct?.id === product.id && (
+                                                {currentProduct.product_id == product.id && (
                                                     <div className="absolute top-2 right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
                                                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -499,12 +715,20 @@ export default function CreateExpanded() {
                                                 
                                                 <div className="aspect-w-3 aspect-h-2 mb-4">
                                                     <img
-                                                        src={product.image_url || 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem'}
+                                                        src={product.image_url && product.image_url.trim() !== '' 
+                                                            ? product.image_url 
+                                                            : 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem'}
                                                         alt={product.name}
-                                                        className="w-full h-32 object-cover rounded-md"
+                                                        className="w-full h-32 object-cover rounded-md transition-opacity duration-200"
                                                         onError={(e) => {
-                                                            e.target.src = 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem';
+                                                            if (e.target.src !== 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem') {
+                                                                e.target.src = 'https://via.placeholder.com/300x200/E5E7EB/9CA3AF?text=Sem+Imagem';
+                                                            }
                                                         }}
+                                                        onLoad={(e) => {
+                                                            e.target.style.opacity = '1';
+                                                        }}
+                                                        style={{ opacity: '0.8' }}
                                                     />
                                                 </div>
                                                 
@@ -543,133 +767,249 @@ export default function CreateExpanded() {
                                     </div>
                                 )}
                                 
-                                {selectedProduct && (
-                                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                {/* Product Customization & Add to Cart */}
+                                {currentProduct.product_id && (
+                                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <h4 className="font-medium text-blue-800 mb-4 flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                                             </svg>
-                                            <span className="font-medium text-green-800">Produto Selecionado:</span>
+                                            Personalizar Produto: {currentProduct.product_name}
+                                        </h4>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Tamanho</label>
+                                                <select
+                                                    value={currentProduct.size}
+                                                    onChange={e => setCurrentProduct(prev => ({...prev, size: e.target.value}))}
+                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                >
+                                                    {Object.entries(sizePricing).map(([size, info]) => (
+                                                        <option key={size} value={size}>
+                                                            {info.name} {info.basePrice > 0 && `(+R$ ${info.basePrice})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={currentProduct.quantity}
+                                                    onChange={e => setCurrentProduct(prev => ({...prev, quantity: parseInt(e.target.value) || 1}))}
+                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome para Bordado</label>
+                                                <input
+                                                    type="text"
+                                                    value={currentProduct.embroidery_text}
+                                                    onChange={e => setCurrentProduct(prev => ({...prev, embroidery_text: e.target.value}))}
+                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                    placeholder={data.child_name || "Digite o nome"}
+                                                />
+                                            </div>
                                         </div>
-                                        <p className="text-green-700">
-                                            <strong>{selectedProduct.name}</strong> - {formatBRL(selectedProduct.price)}
-                                        </p>
-                                        <p className="text-sm text-green-600">
-                                            Os campos de produto foram preenchidos automaticamente abaixo.
-                                        </p>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Fonte</label>
+                                                <select
+                                                    value={currentProduct.embroidery_font}
+                                                    onChange={e => setCurrentProduct(prev => ({...prev, embroidery_font: e.target.value}))}
+                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                    disabled={loadingOptions}
+                                                >
+                                                    {embroideryFonts.map((font) => (
+                                                        <option key={font.id} value={font.id}>
+                                                            {font.display_name || font.name}
+                                                            {font.additional_cost > 0 && ` (+R$ ${font.additional_cost})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Cor</label>
+                                                <select
+                                                    value={currentProduct.embroidery_color}
+                                                    onChange={e => setCurrentProduct(prev => ({...prev, embroidery_color: e.target.value}))}
+                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                    disabled={loadingOptions}
+                                                >
+                                                    {embroideryColors.map((color) => (
+                                                        <option key={color.id} value={color.id}>
+                                                            {color.name}
+                                                            {color.additional_cost > 0 && ` (+R$ ${color.additional_cost})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Posição</label>
+                                                <select
+                                                    value={currentProduct.embroidery_position}
+                                                    onChange={e => setCurrentProduct(prev => ({...prev, embroidery_position: e.target.value}))}
+                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                                    disabled={loadingOptions}
+                                                >
+                                                    {embroideryPositions.map((position) => (
+                                                        <option key={position.id} value={position.id}>
+                                                            {position.display_name || position.name}
+                                                            {position.additional_cost > 0 && ` (+R$ ${position.additional_cost})`}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center">
+                                            <div className="text-sm text-gray-600">
+                                                {(() => {
+                                                    const pricing = calculateCurrentProductPrice();
+                                                    const { breakdown } = pricing;
+                                                    return (
+                                                        <div className="space-y-1">
+                                                            <div>
+                                                                Base: <span className="font-medium">{formatBRL(breakdown.basePrice || 0)}</span>
+                                                                {breakdown.sizePrice > 0 && (
+                                                                    <span> + Tamanho: <span className="font-medium">{formatBRL(breakdown.sizePrice)}</span></span>
+                                                                )}
+                                                                {breakdown.embroideryCost?.total > 0 && (
+                                                                    <span> + Bordado: <span className="font-medium">{formatBRL(breakdown.embroideryCost.total)}</span></span>
+                                                                )}
+                                                            </div>
+                                                            <div className="font-semibold text-purple-600">
+                                                                Unitário: {formatBRL(pricing.unitTotal)} × {breakdown.quantity} = <span className="text-lg">{formatBRL(pricing.totalPrice)}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={addProductToCart}
+                                                disabled={!currentProduct.product_id || !currentProduct.embroidery_text.trim()}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                Adicionar ao Carrinho
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Shopping Cart */}
+                                {data.products && data.products.length > 0 && (
+                                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                        <h4 className="font-medium text-green-800 mb-4 flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5M6 18a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4z" />
+                                            </svg>
+                                            Carrinho ({data.products.length} {data.products.length === 1 ? 'item' : 'itens'})
+                                        </h4>
+                                        
+                                        <div className="space-y-3">
+                                            {data.products.map((product, index) => (
+                                                <div key={product.id || index} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                                                    <div className="flex-1">
+                                                        <div className="font-medium text-gray-900">{product.product_name}</div>
+                                                        <div className="text-sm text-gray-600">
+                                                            {product.embroidery_text} • Tamanho: {product.size} • Qtd: {product.quantity}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            {embroideryFonts.find(f => f.id == product.embroidery_font)?.display_name || 'Fonte'} • 
+                                                            {embroideryColors.find(c => c.id == product.embroidery_color)?.name || 'Cor'} • 
+                                                            {embroideryPositions.find(p => p.id == product.embroidery_position)?.display_name || 'Posição'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right mr-4">
+                                                        <div className="font-bold text-green-600">{formatBRL(product.total_price || 0)}</div>
+                                                        <div className="text-xs text-gray-500">
+                                                            {formatBRL(product.unit_total || (
+                                                                (parseFloat(product.unit_price || 0) + 
+                                                                 parseFloat(product.size_price || 0) + 
+                                                                 parseFloat(product.embroidery_cost || 0))
+                                                            ))} × {product.quantity}
+                                                        </div>
+                                                        <div className="text-xs text-gray-400">
+                                                            Base: {formatBRL(product.unit_price || 0)}
+                                                            {product.size_price > 0 && ` +${formatBRL(product.size_price)}`}
+                                                            {product.embroidery_cost > 0 && ` +${formatBRL(product.embroidery_cost)}`}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeProductFromCart(index)}
+                                                        className="text-red-600 hover:text-red-800 p-1"
+                                                        title="Remover item"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        <div className="mt-4 pt-4 border-t border-green-200">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-medium text-green-800">Total dos Produtos:</span>
+                                                <span className="font-bold text-green-600 text-lg">
+                                                    {formatBRL(data.products.reduce((sum, p) => sum + parseFloat(p.total_price || 0), 0))}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                {data.products.length} {data.products.length === 1 ? 'produto' : 'produtos'} • 
+                                                Unidades: {data.products.reduce((sum, p) => sum + parseInt(p.quantity || 0), 0)}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Pagamento Section with Product Info */}
+                            {/* Pagamento Section */}
                             <div className="bg-white rounded-xl shadow-md p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                                     <span className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
                                         💰
                                     </span>
-                                    Seleção de Produtos
+                                    Informações de Pagamento
                                 </h3>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Produto *
+                                            Total dos Produtos
                                         </label>
-                                        <select
-                                            value={data.product_id}
-                                            onChange={e => handleProductChange(e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            disabled={loadingOptions}
-                                            required
-                                        >
-                                            <option value="">Selecione um produto</option>
-                                            {loadingOptions ? (
-                                                <option>Carregando...</option>
-                                            ) : (
-                                                availableProducts.map((product) => (
-                                                    <option key={product.id} value={product.id}>
-                                                        {product.name} - {formatBRL(product.price)}
-                                                    </option>
-                                                ))
-                                            )}
-                                        </select>
-                                        {errors.product_id && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.product_id}</p>
-                                        )}
+                                        <div className="w-full rounded-lg border-gray-300 bg-gray-50 px-3 py-2 text-gray-700 font-semibold">
+                                            {formatBRL(data.products.reduce((sum, p) => sum + parseFloat(p.total_price || 0), 0))}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {data.products.length} {data.products.length === 1 ? 'produto' : 'produtos'} no carrinho
+                                        </p>
                                     </div>
                                     
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Categoria
+                                            Total Geral (Produtos + Frete)
                                         </label>
-                                        <input
-                                            type="text"
-                                            value={data.product_category}
-                                            className="w-full rounded-lg border-gray-300 bg-gray-50 text-gray-600"
-                                            placeholder="Será preenchida automaticamente"
-                                            disabled
-                                            readOnly
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Tamanho *
-                                        </label>
-                                        <select
-                                            value={data.product_size}
-                                            onChange={e => setData('product_size', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            required
-                                        >
-                                            {selectedProduct ? (
-                                                selectedProduct.available_sizes?.map((size) => {
-                                                    const sizeInfo = sizePricing[size] || { name: size, basePrice: 0 };
-                                                    return (
-                                                        <option key={size} value={size}>
-                                                            {sizeInfo.name} {sizeInfo.basePrice > 0 && formatAdditionalCost(sizeInfo.basePrice)}
-                                                        </option>
-                                                    );
-                                                })
-                                            ) : (
-                                                Object.entries(sizePricing).map(([size, info]) => (
-                                                    <option key={size} value={size}>
-                                                        {info.name} {info.basePrice > 0 && formatAdditionalCost(info.basePrice)}
-                                                    </option>
-                                                ))
+                                        <div className="w-full rounded-lg border-gray-300 bg-green-50 px-3 py-2 text-green-700 font-bold text-lg">
+                                            {formatBRL(
+                                                data.products.reduce((sum, p) => sum + parseFloat(p.total_price || 0), 0) + 
+                                                parseFloat(data.shipping_amount || 0)
                                             )}
-                                        </select>
-                                        {errors.product_size && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.product_size}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Preço Base do Produto *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.product_price ? formatBRL(data.product_price) : ''}
-                                            className="w-full rounded-lg border-gray-300 bg-gray-50 text-gray-600"
-                                            placeholder="Será preenchido automaticamente"
-                                            disabled
-                                            readOnly
-                                        />
-                                        {errors.product_price && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.product_price}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Total Calculado
-                                        </label>
-                                        <div className="w-full rounded-lg border-gray-300 bg-gray-50 px-3 py-2 text-gray-700">
-                                            {formatBRL(totalWithEmbroidery)}
                                         </div>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Preço base + tamanho + bordado
+                                            Este é o valor total que a cliente pagará
                                         </p>
                                     </div>
 
@@ -788,100 +1128,51 @@ export default function CreateExpanded() {
                                 </div>
                             </div>
 
-                            {/* Bordado Section */}
+                            {/* Global Child Name Section */}
                             <div className="bg-white rounded-xl shadow-md p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                                     <span className="w-8 h-8 bg-pink-100 text-pink-600 rounded-lg flex items-center justify-center">
-                                        🎨
+                                        👶
                                     </span>
-                                    Personalização do Bordado
+                                    Dados da Criança
                                 </h3>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="md:col-span-2">
+                                <div className="max-w-md">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Nome da Criança *
                                         </label>
                                         <input
                                             type="text"
+                                            name="child_name"
                                             value={data.child_name}
-                                            onChange={e => setData('child_name', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                            onChange={e => {
+                                                setData('child_name', e.target.value);
+                                                // Auto-fill current product embroidery text if it's empty
+                                                if (currentProduct.product_id && !currentProduct.embroidery_text) {
+                                                    setCurrentProduct(prev => ({...prev, embroidery_text: e.target.value}));
+                                                }
+                                                // Clear validation error
+                                                if (validationErrors.child_name) {
+                                                    setValidationErrors(prev => ({ ...prev, child_name: undefined }));
+                                                }
+                                            }}
+                                            className={`w-full rounded-lg focus:ring-purple-500 ${
+                                                validationErrors.child_name 
+                                                    ? 'border-red-500 focus:border-red-500 bg-red-50' 
+                                                    : 'border-gray-300 focus:border-purple-500'
+                                            }`}
                                             placeholder="Helena"
                                             required
                                         />
-                                        {errors.child_name && (
-                                            <p className="text-red-500 text-sm mt-1">{errors.child_name}</p>
+                                        {(errors.child_name || validationErrors.child_name) && (
+                                            <p className="text-red-500 text-sm mt-1">
+                                                {validationErrors.child_name || errors.child_name}
+                                            </p>
                                         )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Posição do Bordado
-                                        </label>
-                                        <select
-                                            value={data.embroidery_position}
-                                            onChange={e => setData('embroidery_position', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            disabled={loadingOptions}
-                                        >
-                                            {loadingOptions ? (
-                                                <option>Carregando...</option>
-                                            ) : (
-                                                embroideryPositions.map((position) => (
-                                                    <option key={position.id} value={position.id}>
-                                                        {position.display_name || position.name}
-                                                        {position.additional_cost > 0 && formatAdditionalCost(position.additional_cost)}
-                                                    </option>
-                                                ))
-                                            )}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Cor do Bordado
-                                        </label>
-                                        <select
-                                            value={data.embroidery_color}
-                                            onChange={e => setData('embroidery_color', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            disabled={loadingOptions}
-                                        >
-                                            {loadingOptions ? (
-                                                <option>Carregando...</option>
-                                            ) : (
-                                                embroideryColors.map((color) => (
-                                                    <option key={color.id} value={color.id}>
-                                                        {color.name}
-                                                        {color.additional_cost > 0 && formatAdditionalCost(color.additional_cost)}
-                                                    </option>
-                                                ))
-                                            )}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Fonte do Bordado
-                                        </label>
-                                        <select
-                                            value={data.embroidery_font}
-                                            onChange={e => setData('embroidery_font', e.target.value)}
-                                            className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                            disabled={loadingOptions}
-                                        >
-                                            {loadingOptions ? (
-                                                <option>Carregando...</option>
-                                            ) : (
-                                                embroideryFonts.map((font) => (
-                                                    <option key={font.id} value={font.id}>
-                                                        {font.display_name || font.name}
-                                                        {font.additional_cost > 0 && formatAdditionalCost(font.additional_cost)}
-                                                    </option>
-                                                ))
-                                            )}
-                                        </select>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Este nome será usado como sugestão para bordados
+                                        </p>
                                     </div>
                                 </div>
                             </div>
