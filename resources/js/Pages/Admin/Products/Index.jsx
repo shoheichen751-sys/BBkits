@@ -67,20 +67,25 @@ export default function Index({ auth, products, categories, filters }) {
         e.preventDefault();
         post('/admin/products', {
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => {
                 setShowAddModal(false);
                 reset();
+                setImagePreview(null);
             },
         });
     };
     
     const handleUpdate = (e) => {
         e.preventDefault();
-        put(`/admin/products/${selectedProduct.id}`, {
+        post(`/admin/products/${selectedProduct.id}`, {
+            _method: 'PUT',
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => {
                 setShowEditModal(false);
                 reset();
+                setImagePreview(null);
             },
         });
     };
