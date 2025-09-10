@@ -741,10 +741,10 @@ export default function Show({ sale }) {
                                         <div className="commission-highlight">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-sm text-blue-600 font-bold">📈 Base para Comissão</span>
-                                                <span className="text-xl font-bold text-blue-600">{formatCurrency(sale.received_amount - sale.shipping_amount)}</span>
+                                                <span className="text-xl font-bold text-blue-600">{formatCurrency(sale.total_amount)}</span>
                                             </div>
                                             <p className="text-xs text-blue-500 mt-2">
-                                                (Valor recebido - frete)
+                                                (Valor total dos produtos - frete não incluído)
                                             </p>
                                         </div>
                                     </div>

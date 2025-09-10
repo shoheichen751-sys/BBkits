@@ -102,6 +102,42 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
             >
                 <div className="py-8">
                     <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                        {/* Payment Status Information */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6 border border-blue-200">
+                            <div className="flex items-start">
+                                <div className="flex-shrink-0">
+                                    <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <h3 className="text-sm font-medium text-blue-800">
+                                        💰 Status de Pagamento - Guia Rápido
+                                    </h3>
+                                    <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-blue-700">
+                                        <div className="flex items-center space-x-2">
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                ✅ Totalmente Pago
+                                            </span>
+                                            <span>= 100% recebido</span>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                💰 % Processado
+                                            </span>
+                                            <span>= Parcialmente pago</span>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                🏦 Aprovado Financeiro
+                                            </span>
+                                            <span>= Pagamento confirmado pelo financeiro</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Filters */}
                         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                             <div className="flex flex-col md:flex-row gap-4">
@@ -201,22 +237,34 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
                                                         <div className="flex items-center gap-2 mt-1">
                                                             {order.payment_status === 'fully_paid' ? (
                                                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                    ✅ 100% Pago
+                                                                    ✅ Totalmente Pago
                                                                 </span>
                                                             ) : order.payment_status === 'partially_paid' ? (
-                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                                    ⚠️ {Math.round(order.payment_progress)}% Pago
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                    💰 {Math.round(order.payment_progress)}% Processado
                                                                 </span>
                                                             ) : (
                                                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                                    ❌ Não Pago
+                                                                    ❌ Aguardando Pagamento
+                                                                </span>
+                                                            )}
+                                                            
+                                                            {/* Show finance approval status */}
+                                                            {order.finance_admin_id && order.order_status !== 'pending_payment' && (
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                                    🏦 Aprovado Financeiro
                                                                 </span>
                                                             )}
                                                         </div>
                                                         {order.payment_status === 'partially_paid' && (
                                                             <div className="text-xs text-gray-500 mt-1">
-                                                                Pago: {formatBRL(order.total_paid_amount)} | 
-                                                                Restante: {formatBRL(order.remaining_amount)}
+                                                                💳 Pago: {formatBRL(order.total_paid_amount)} | 
+                                                                ⏰ Restante: {formatBRL(order.remaining_amount)}
+                                                            </div>
+                                                        )}
+                                                        {order.payment_status === 'fully_paid' && order.finance_admin_id && (
+                                                            <div className="text-xs text-green-600 mt-1 font-medium">
+                                                                ✅ Pagamento totalmente processado
                                                             </div>
                                                         )}
                                                     </td>

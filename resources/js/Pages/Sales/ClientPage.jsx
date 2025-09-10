@@ -3,7 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import { formatBRL } from '@/utils/currency';
 
-export default function ClientPage({ sale, orderStatus, orderStatusColor, remainingAmount, needsFinalPayment, productPhotoUrl }) {
+export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAmount, remainingAmount, needsFinalPayment, productPhotoUrl }) {
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const [showAddressForm, setShowAddressForm] = useState(!sale.delivery_address);
     const [paymentPreview, setPaymentPreview] = useState(null);
@@ -209,7 +209,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, remain
                             <div>
                                 <p className="text-sm text-gray-600">Valor Pago</p>
                                 <p className="font-medium text-gray-900">
-                                    {formatBRL((parseFloat(sale.total_amount) + parseFloat(sale.shipping_amount || 0)) - remainingAmount)}
+                                    {formatBRL(paidAmount)}
                                     {remainingAmount > 0 && (
                                         <span className="text-sm text-orange-600 ml-2">
                                             (Falta {formatBRL(remainingAmount)})

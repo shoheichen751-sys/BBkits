@@ -70,7 +70,7 @@ Route::get('/dashboard', function () {
 
         if ($user->role === 'vendedora') {
             $commissionService = app(\App\Services\CommissionService::class);
-            $allMonthlySales = $user->sales()->whereYear('payment_date', $currentYear)->whereMonth('payment_date', $currentMonth)->get();
+            $allMonthlySales = $user->sales()->whereYear('payment_date', $currentYear)->whereMonth('payment_date', $currentMonth)->where('status', '!=', 'cancelado')->get();
 
             $approvedSales = $allMonthlySales->where('status', 'aprovado');
             $pendingSales = $allMonthlySales->where('status', 'pendente');
@@ -78,29 +78,29 @@ Route::get('/dashboard', function () {
             $monthlySalesCount = $allMonthlySales->count();
             $approvedSalesCount = $approvedSales->count();
 
-            // Fix: Total sales amount should include shipping
+            // Total sales amount: Total expected value (total_amount + shipping) for all sales
             $totalSalesAmount = 0;
             foreach ($allMonthlySales as $sale) {
-                $totalSalesAmount += $sale->total_amount + ($sale->shipping_amount ?? 0);
+                $totalSalesAmount += ($sale->total_amount ?? 0) + ($sale->shipping_amount ?? 0);
             }
             
-            // Fix: Approved sales should only show amounts after admin approval
+            // Approved sales: Total amount actually RECEIVED across all sales
             $approvedSalesTotal = 0;
-            foreach ($approvedSales as $sale) {
-                $approvedSalesTotal += $sale->hasPartialPayments() ? $sale->getTotalPaidAmount() : $sale->received_amount;
+            foreach ($allMonthlySales as $sale) {
+                if ($sale->hasPartialPayments()) {
+                    $approvedSalesTotal += $sale->getTotalPaidAmount();
+                } else {
+                    // For sales without payment records, use received_amount (backward compatibility)
+                    $approvedSalesTotal += $sale->received_amount ?? 0;
+                }
             }
             
-            // Fix: Pending sales should show total pending amount including shipping for non-approved sales
-            $pendingSalesTotal = 0;
-            foreach ($pendingSales as $sale) {
-                $pendingSalesTotal += $sale->total_amount + ($sale->shipping_amount ?? 0);
-            }
+            // Pending sales: Amount still OWED (Total Expected - Total Received)
+            $pendingSalesTotal = max(0, $totalSalesAmount - $approvedSalesTotal);
             $totalShipping = $allMonthlySales->sum('shipping_amount');
             
-            $commissionBase = 0;
-            foreach ($approvedSales as $sale) {
-                $commissionBase += $sale->getCommissionBaseAmount();
-            }
+            // Commission base: Total received amount minus shipping (commission eligible amount)
+            $commissionBase = max(0, $approvedSalesTotal - $totalShipping);
 
             $monthlyCommission = $user->getMonthlyCommissionTotal($currentMonth, $currentYear);
             $monthlySalesTotal = $user->getMonthlySalesTotal($currentMonth, $currentYear);
@@ -174,6 +174,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::post('/sales/store-products', [SaleController::class, 'storeWithProducts'])->name('sales.store-products');
     Route::get('/sales/kanban', [SaleController::class, 'kanban'])->name('sales.kanban');
     Route::patch('/sales/{sale}/status', [SaleController::class, 'updateStatus'])->name('sales.update-status');
+    Route::post('/sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
     Route::resource('sales', SaleController::class);
 
     Route::get('/sales/{sale}/payments', [SalePaymentController::class, 'index'])->name('payments.index');

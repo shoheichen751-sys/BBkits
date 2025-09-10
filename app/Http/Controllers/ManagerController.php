@@ -38,12 +38,46 @@ class ManagerController extends Controller
         
         // Add payment status information to each order
         $orders->getCollection()->transform(function ($order) {
-            $order->payment_progress = $order->getPaymentProgress();
-            $order->payment_status = $order->getPaymentStatus();
-            $order->is_fully_paid = $order->isFullyPaid();
-            $order->total_paid_amount = $order->getTotalPaidAmount();
-            $order->remaining_amount = $order->getRemainingAmount();
-            $order->can_print = $order->isFullyPaid() && !empty($order->approved_by);
+            // For manager view, if order is finance-approved, consider it paid even if payments aren't fully tracked
+            if ($order->order_status !== 'pending_payment' && !empty($order->finance_admin_id)) {
+                // If finance approved it, there should be payment
+                $order->payment_progress = $order->getPaymentProgress();
+                $order->payment_status = $order->getPaymentStatus();
+                $order->is_fully_paid = $order->isFullyPaid();
+                $order->total_paid_amount = $order->getTotalPaidAmount();
+                $order->remaining_amount = $order->getRemainingAmount();
+                
+                // Override payment status for finance-approved orders with missing payment data
+                if ($order->payment_status === 'unpaid' && $order->order_status !== 'pending_payment') {
+                    // If order moved beyond payment_approved but shows unpaid, it's likely a data sync issue
+                    // Use received_amount or assume paid based on order progression
+                    if ($order->received_amount > 0) {
+                        $order->payment_status = $order->received_amount >= ($order->total_amount + $order->shipping_amount) ? 'fully_paid' : 'partially_paid';
+                        $order->is_fully_paid = $order->received_amount >= ($order->total_amount + $order->shipping_amount);
+                        $order->total_paid_amount = $order->received_amount;
+                        $order->remaining_amount = max(0, ($order->total_amount + $order->shipping_amount) - $order->received_amount);
+                        $order->payment_progress = $order->received_amount > 0 ? ($order->received_amount / ($order->total_amount + $order->shipping_amount)) * 100 : 0;
+                    } else {
+                        // If no received_amount but finance approved, assume initial payment was made
+                        $order->payment_status = 'partially_paid';
+                        $order->total_paid_amount = $order->total_amount; // Assume product paid, shipping might be pending
+                        $order->remaining_amount = $order->shipping_amount ?? 0;
+                        $order->payment_progress = $order->shipping_amount > 0 ? ($order->total_amount / ($order->total_amount + $order->shipping_amount)) * 100 : 100;
+                        $order->is_fully_paid = $order->shipping_amount <= 0;
+                    }
+                }
+                
+                $order->can_print = $order->is_fully_paid && !empty($order->finance_admin_id);
+            } else {
+                // Standard payment calculation for pending orders
+                $order->payment_progress = $order->getPaymentProgress();
+                $order->payment_status = $order->getPaymentStatus();
+                $order->is_fully_paid = $order->isFullyPaid();
+                $order->total_paid_amount = $order->getTotalPaidAmount();
+                $order->remaining_amount = $order->getRemainingAmount();
+                $order->can_print = $order->isFullyPaid() && !empty($order->finance_admin_id);
+            }
+            
             return $order;
         });
 

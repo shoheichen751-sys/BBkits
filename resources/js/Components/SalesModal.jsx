@@ -44,6 +44,15 @@ export default function SalesModal({ isOpen, onClose, sales, sellerName }) {
         return statusMap[status] || { label: status, class: 'bg-gray-100 text-gray-800' };
     };
 
+    const getPaymentStatusBadge = (paymentStatus) => {
+        const statusMap = {
+            'fully_paid': { label: 'Totalmente Pago', class: 'bg-green-100 text-green-800' },
+            'partially_paid': { label: 'Parcialmente Pago', class: 'bg-orange-100 text-orange-800' },
+            'unpaid': { label: 'Não Pago', class: 'bg-red-100 text-red-800' }
+        };
+        return statusMap[paymentStatus] || { label: paymentStatus, class: 'bg-gray-100 text-gray-800' };
+    };
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
@@ -137,10 +146,16 @@ export default function SalesModal({ isOpen, onClose, sales, sellerName }) {
                                     Frete
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Valor Recebido
+                                    Valor Pago
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
+                                    Restante
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status Venda
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status Pagamento
                                 </th>
                                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Ações
@@ -150,10 +165,11 @@ export default function SalesModal({ isOpen, onClose, sales, sellerName }) {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredSales.map((sale) => {
                                 const statusInfo = getStatusBadge(sale.status);
+                                const paymentStatusInfo = getPaymentStatusBadge(sale.payment_status);
                                 return (
                                     <tr key={sale.id} className="hover:bg-gray-50">
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {new Date(sale.payment_date).toLocaleDateString('pt-BR')}
+                                            {sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-BR') : '-'}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {sale.client_name}
@@ -165,11 +181,23 @@ export default function SalesModal({ isOpen, onClose, sales, sellerName }) {
                                             R$ {(sale.shipping_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            R$ {(sale.received_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            <span className={sale.received_amount > 0 ? 'text-green-700 font-medium' : 'text-gray-500'}>
+                                                R$ {(sale.received_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <span className={sale.remaining_amount > 0 ? 'text-orange-700 font-medium' : 'text-gray-500'}>
+                                                R$ {(sale.remaining_amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.class}`}>
                                                 {statusInfo.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${paymentStatusInfo.class}`}>
+                                                {paymentStatusInfo.label}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">

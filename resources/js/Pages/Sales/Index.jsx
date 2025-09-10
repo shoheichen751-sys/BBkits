@@ -1,42 +1,50 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
-import DeleteConfirmationModal from '@/Components/DeleteConfirmationModal';
+import SaleCancellationModal from '@/Components/SaleCancellationModal';
 import ResponsiveTable from '@/Components/ResponsiveTable';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { formatBRL } from '@/utils/currency';
 
 export default function Index({ sales, auth }) {
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [saleToDelete, setSaleToDelete] = useState(null);
-    const { delete: destroy, processing } = useForm({});
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [saleToCancel, setSaleToCancel] = useState(null);
+    const { post, processing } = useForm({});
 
-    const handleDeleteClick = (sale) => {
-        setSaleToDelete(sale);
-        setShowDeleteModal(true);
+    const handleCancelClick = (sale) => {
+        setSaleToCancel(sale);
+        setShowCancelModal(true);
     };
 
-    const handleDeleteConfirm = () => {
-        if (saleToDelete) {
-            destroy(route('sales.destroy', saleToDelete.id), {
-                onSuccess: () => {
-                    toast.success('Venda excluída com sucesso!');
-                    setShowDeleteModal(false);
-                    setSaleToDelete(null);
+    const handleCancelConfirm = ({ password, explanation }) => {
+        if (saleToCancel) {
+            post(route('sales.cancel', saleToCancel.id), {
+                data: {
+                    admin_password: password,
+                    explanation: explanation
                 },
-                onError: () => {
-                    toast.error('Erro ao excluir a venda.');
-                    setShowDeleteModal(false);
-                    setSaleToDelete(null);
+                onSuccess: () => {
+                    toast.success('Venda cancelada com sucesso!');
+                    setShowCancelModal(false);
+                    setSaleToCancel(null);
+                },
+                onError: (errors) => {
+                    if (errors.admin_password) {
+                        toast.error('Senha do administrador incorreta.');
+                    } else if (errors.explanation) {
+                        toast.error('Explicação inválida.');
+                    } else {
+                        toast.error('Erro ao cancelar a venda.');
+                    }
                 }
             });
         }
     };
 
-    const handleDeleteCancel = () => {
-        setShowDeleteModal(false);
-        setSaleToDelete(null);
+    const handleCancelModalClose = () => {
+        setShowCancelModal(false);
+        setSaleToCancel(null);
     };
 
     const getStatusBadge = (status) => {
@@ -465,14 +473,14 @@ export default function Index({ sales, auth }) {
                                                                             <i className="fas fa-edit mr-1"></i>
                                                                             Editar
                                                                         </Link>
-                                                                        {/* Only show delete button to admin users */}
-                                                                        {auth?.user?.role === 'admin' && (
+                                                                        {/* Only show cancel button to admin users */}
+                                                                        {auth?.user?.role === 'admin' && sale.status !== 'cancelado' && (
                                                                             <button
-                                                                                onClick={() => handleDeleteClick(sale)}
+                                                                                onClick={() => handleCancelClick(sale)}
                                                                                 className="action-btn action-btn-delete"
                                                                             >
-                                                                                <i className="fas fa-trash mr-1"></i>
-                                                                                Excluir
+                                                                                <i className="fas fa-ban mr-1"></i>
+                                                                                Cancelar
                                                                             </button>
                                                                         )}
                                                                     </>
@@ -524,12 +532,11 @@ export default function Index({ sales, auth }) {
                 </div>
             </AuthenticatedLayout>
 
-            <DeleteConfirmationModal
-                show={showDeleteModal}
-                onClose={handleDeleteCancel}
-                onConfirm={handleDeleteConfirm}
-                title="Excluir Venda"
-                message={saleToDelete ? `Tem certeza que deseja excluir a venda para ${saleToDelete.client_name}? Esta ação não pode ser desfeita.` : ''}
+            <SaleCancellationModal
+                show={showCancelModal}
+                onClose={handleCancelModalClose}
+                onConfirm={handleCancelConfirm}
+                sale={saleToCancel}
                 processing={processing}
             />
 

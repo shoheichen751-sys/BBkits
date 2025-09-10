@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use App\Services\PDFReportService;
 use App\Services\NotificationService;
@@ -697,9 +698,20 @@ class SaleController extends Controller
 
     public function cancel(Request $request, Sale $sale)
     {
+        // Only admins can cancel sales
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only administrators can cancel sales.');
+        }
+
         $validated = $request->validate([
-            'correction_reason' => 'required|string|max:1000',
+            'admin_password' => 'required|string',
+            'explanation' => 'required|string|min:10|max:1000',
         ]);
+
+        // Verify admin password
+        if (!Hash::check($validated['admin_password'], auth()->user()->password)) {
+            return response()->json(['admin_password' => 'Senha do administrador incorreta.'], 422);
+        }
 
         DB::transaction(function () use ($sale, $validated) {
             $originalStatus = $sale->status;
@@ -710,7 +722,7 @@ class SaleController extends Controller
                 'status' => 'cancelado',
                 'corrected_by' => auth()->id(),
                 'corrected_at' => now(),
-                'correction_reason' => $validated['correction_reason'],
+                'correction_reason' => $validated['explanation'],
                 'original_status' => $originalStatus,
             ]);
 
@@ -735,6 +747,7 @@ class SaleController extends Controller
             'sale' => $sale->load(['user', 'productionAdmin', 'financeAdmin']),
             'orderStatus' => $sale->getOrderStatusLabel(),
             'orderStatusColor' => $sale->getOrderStatusColor(),
+            'paidAmount' => $sale->getTotalPaidAmount(),
             'remainingAmount' => $sale->getRemainingAmount(),
             'needsFinalPayment' => $sale->needsFinalPayment(),
             'productPhotoUrl' => $sale->getProductPhotoUrl()

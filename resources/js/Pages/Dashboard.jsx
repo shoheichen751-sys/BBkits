@@ -330,6 +330,31 @@ export default function Dashboard() {
 
                     <div className="py-12 relative z-10">
                         <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                            {/* Quick Action Button for Salespeople */}
+                            {auth.user.role === 'vendedora' && (
+                                <div className="mb-8 text-center animate-fadeInUp">
+                                    <a
+                                        href="/sales/create-expanded"
+                                        className="inline-flex items-center px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 group"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #FF6B9D 0%, #C96CBE 50%, #95A5E8 100%)',
+                                            boxShadow: '0 10px 30px rgba(255, 107, 157, 0.4), 0 0 20px rgba(201, 108, 190, 0.3)',
+                                        }}
+                                    >
+                                        <svg className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        <span className="mr-2">✨ Nova Venda</span>
+                                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5-5 5M6 12h12" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-gray-600 mt-3 text-sm">
+                                        💼 Registre uma venda e aumente suas comissões!
+                                    </p>
+                                </div>
+                            )}
+                            
                             {/* Enhanced Ranking Display - Moved to Top for Salespeople */}
                             {auth.user.role === 'vendedora' && gamification && gamification.ranking && gamification.ranking.length > 0 && (
                                 <div className="mb-12 animate-fadeInUp">

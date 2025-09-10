@@ -25,6 +25,12 @@ export default function OrdersIndex({ orders, statusFilter }) {
     };
 
     const handleStartProduction = (order) => {
+        // Check if order can start production
+        if (order.order_status !== 'payment_approved') {
+            toast.error(`Este pedido não pode iniciar produção. Status atual: ${order.order_status}`);
+            return;
+        }
+        
         post(route('production.orders.start', order.id), {
             onSuccess: () => {
                 toast.success('Produção iniciada com sucesso!');
@@ -38,8 +44,10 @@ export default function OrdersIndex({ orders, statusFilter }) {
                     toast.error(errors.error);
                 } else if (errors.validation) {
                     toast.error('Erro de validação: ' + errors.validation.join(', '));
+                } else if (errors.message) {
+                    toast.error(errors.message);
                 } else {
-                    toast.error('Erro ao iniciar produção. Tente novamente.');
+                    toast.error('Erro ao iniciar produção. Verifique o status do pedido.');
                 }
             },
             onStart: () => {
@@ -160,7 +168,13 @@ export default function OrdersIndex({ orders, statusFilter }) {
     // Helper function to get financial summary for an order
     const getFinancialSummary = (order) => {
         const totalAmount = parseFloat(order.total_amount) + parseFloat(order.shipping_amount || 0);
-        const paidAmount = order.payments ? order.payments.filter(p => p.status === 'approved').reduce((sum, p) => sum + parseFloat(p.amount), 0) : parseFloat(order.received_amount || 0);
+        
+        // Fix: Check if there are actual approved payments, not just if payments array exists
+        const approvedPayments = order.payments ? order.payments.filter(p => p.status === 'approved') : [];
+        const paidAmount = approvedPayments.length > 0 
+            ? approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0)
+            : parseFloat(order.received_amount || 0);
+            
         const remainingAmount = Math.max(0, totalAmount - paidAmount);
         
         return {
@@ -522,15 +536,27 @@ export default function OrdersIndex({ orders, statusFilter }) {
                 {/* Photo Upload Modal */}
                 {showModal && selectedOrder && modalType === 'photo' && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg w-full max-w-2xl">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all">
                             {/* Header */}
-                            <div className="flex items-center justify-between p-6 border-b">
-                                <h2 className="text-xl font-bold text-gray-900">
-                                    Enviar Foto do Produto - {selectedOrder.child_name}
-                                </h2>
+                            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-xl">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold">
+                                            📸 Enviar Foto do Produto
+                                        </h2>
+                                        <p className="text-purple-100 text-sm">
+                                            Kit: {selectedOrder.child_name}
+                                        </p>
+                                    </div>
+                                </div>
                                 <button
                                     onClick={() => setShowModal(false)}
-                                    className="p-2 hover:bg-gray-100 rounded-lg"
+                                    className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
                                 >
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -541,81 +567,123 @@ export default function OrdersIndex({ orders, statusFilter }) {
                             {/* Content */}
                             <div className="p-6">
                                 <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Foto do Produto Finalizado
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                        Foto do Produto Finalizado *
                                     </label>
-                                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-purple-400 transition-colors">
-                                        <div className="space-y-1 text-center">
+                                    <div className="mt-1 flex justify-center px-6 pt-8 pb-8 border-2 border-gray-300 border-dashed rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all duration-200 bg-gray-50">
+                                        <div className="space-y-2 text-center">
                                             {photoPreview ? (
-                                                <div>
-                                                    <img 
-                                                        src={photoPreview} 
-                                                        alt="Preview" 
-                                                        className="mx-auto h-48 w-auto rounded"
-                                                    />
-                                                    <p className="text-sm text-gray-600 mt-2">
+                                                <div className="space-y-3">
+                                                    <div className="relative inline-block">
+                                                        <img 
+                                                            src={photoPreview} 
+                                                            alt="Preview do produto" 
+                                                            className="mx-auto h-48 w-auto rounded-lg shadow-md"
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                setPhotoPreview(null);
+                                                                setData('product_photo', null);
+                                                            }}
+                                                            className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full hover:bg-red-600 transition-colors flex items-center justify-center text-xs"
+                                                            title="Remover foto"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 font-medium">
                                                         {data.product_photo?.name}
+                                                    </p>
+                                                    <p className="text-xs text-green-600 font-medium">
+                                                        ✅ Foto selecionada! Clique em "Enviar" para continuar
                                                     </p>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                     </svg>
-                                                    <div className="flex text-sm text-gray-600">
-                                                        <label htmlFor="product_photo" className="relative cursor-pointer rounded-md bg-white font-medium text-purple-600 hover:text-purple-500">
-                                                            <span>Selecionar foto</span>
+                                                    <div className="flex text-base text-gray-600">
+                                                        <label htmlFor="product_photo" className="relative cursor-pointer rounded-md font-semibold text-purple-600 hover:text-purple-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-500">
+                                                            <span className="text-lg">Clique para selecionar foto</span>
                                                             <input
                                                                 id="product_photo"
                                                                 type="file"
                                                                 className="sr-only"
-                                                                accept="image/*"
+                                                                accept="image/jpeg,image/png,image/jpg"
                                                                 onChange={handlePhotoChange}
                                                                 required
                                                             />
                                                         </label>
-                                                        <p className="pl-1">ou arraste aqui</p>
+                                                        <p className="pl-2">ou arraste e solte aqui</p>
                                                     </div>
-                                                    <p className="text-xs text-gray-500">
-                                                        PNG, JPG até 5MB
+                                                    <p className="text-sm text-gray-500">
+                                                        Formatos aceitos: PNG, JPG, JPEG (máximo 5MB)
+                                                    </p>
+                                                    <p className="text-xs text-blue-600 font-medium">
+                                                        💡 Tire uma foto clara do produto finalizado para aprovação do cliente
                                                     </p>
                                                 </>
                                             )}
                                         </div>
                                     </div>
                                     {errors.product_photo && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.product_photo}</p>
+                                        <p className="text-red-600 text-sm mt-2 flex items-center">
+                                            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            {errors.product_photo}
+                                        </p>
                                     )}
                                 </div>
 
                                 <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Observações (opcional)
                                     </label>
                                     <textarea
                                         value={data.notes}
                                         onChange={e => setData('notes', e.target.value)}
                                         rows={3}
-                                        className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                        placeholder="Adicione observações sobre o produto..."
+                                        className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 transition-colors shadow-sm"
+                                        placeholder="Adicione observações sobre o produto, detalhes especiais ou instruções..."
+                                        maxLength={500}
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {data.notes?.length || 0}/500 caracteres
+                                    </p>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex justify-end gap-4 p-6 border-t bg-gray-50">
+                            <div className="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-xl">
                                 <button
                                     onClick={() => setShowModal(false)}
-                                    className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     onClick={handlePhotoUpload}
                                     disabled={processing || !data.product_photo}
-                                    className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md flex items-center space-x-2"
                                 >
-                                    {processing ? 'Enviando...' : 'Enviar para Aprovação'}
+                                    {processing ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Enviando...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>Enviar para Aprovação</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

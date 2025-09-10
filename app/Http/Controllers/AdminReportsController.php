@@ -83,28 +83,43 @@ class AdminReportsController extends Controller
             ->map(function ($seller) use ($month, $year) {
                 $commissionService = new CommissionService();
                 
-                // Get all sales for calculations
+                // Get all sales for calculations with payment relationships (exclude cancelled sales)
                 $allSales = Sale::where('user_id', $seller->id)
                     ->whereYear('payment_date', $year)
                     ->whereMonth('payment_date', $month)
+                    ->where('status', '!=', 'cancelado')
+                    ->with('payments')
                     ->get();
                 
                 $approvedSales = $allSales->where('status', 'aprovado');
                 $pendingSales = $allSales->where('status', 'pendente');
                 
-                // Calculate totals - now properly separating sale value from received amount
-                $totalSaleValue = $allSales->sum('total_amount');
-                $totalReceivedAmount = $allSales->sum('received_amount');
-                $approvedSaleValue = $approvedSales->sum('total_amount');
-                $approvedReceivedAmount = $approvedSales->sum('received_amount');
-                $pendingSaleValue = $pendingSales->sum('total_amount');
-                $pendingReceivedAmount = $pendingSales->sum('received_amount');
+                // Calculate totals using financial flow logic (consistent with dashboard)
                 $totalShipping = $allSales->sum('shipping_amount');
                 
-                // Calculate commission base using received amount for commission calculation
-                $commissionBase = $approvedSales->sum(function ($sale) {
-                    return ($sale->received_amount ?: 0) - ($sale->shipping_amount ?: 0);
-                });
+                // Total sale value: Expected amount including shipping
+                $totalSaleValue = $allSales->sum('total_amount') + $totalShipping;
+                
+                // Calculate total received amount across all sales
+                $totalReceivedAmount = 0;
+                foreach ($allSales as $sale) {
+                    $approvedPayments = $sale->payments ? $sale->payments->where('status', 'approved') : collect();
+                    $receivedAmount = $approvedPayments->count() > 0 
+                        ? $approvedPayments->sum('amount')
+                        : ($sale->received_amount ?? 0);
+                    $totalReceivedAmount += $receivedAmount;
+                }
+                
+                // Financial flow logic:
+                $approvedReceivedAmount = $totalReceivedAmount; // Total amount actually received
+                $pendingReceivedAmount = max(0, $totalSaleValue - $totalReceivedAmount); // Amount still owed
+                
+                // For compatibility with existing code
+                $approvedSaleValue = $approvedSales->sum('total_amount');
+                $pendingSaleValue = $pendingSales->sum('total_amount');
+                
+                // Commission base: Total received minus shipping
+                $commissionBase = max(0, $totalReceivedAmount - $totalShipping);
                 
                 $commission = $this->calculateCommissionForSeller($seller->id, $month, $year);
                 
@@ -135,7 +150,38 @@ class AdminReportsController extends Controller
                     'totalCommission' => $commission,
                     'commissionRate' => $commissionService->calculateCommissionRate($commissionBase),
                     'level' => $this->getPerformanceLevel($commissionBase),
-                    'metaAchieved' => $commissionService->calculateCommissionRate($commissionBase) > 0
+                    'metaAchieved' => $commissionService->calculateCommissionRate($commissionBase) > 0,
+                    // Add actual sales data for modal
+                    'sales' => $allSales->map(function ($sale) {
+                        $approvedPayments = $sale->payments ? $sale->payments->where('status', 'approved') : collect();
+                        $receivedAmount = $approvedPayments->count() > 0 
+                            ? $approvedPayments->sum('amount')
+                            : ($sale->received_amount ?? 0);
+                        
+                        $totalWithShipping = ($sale->total_amount ?? 0) + ($sale->shipping_amount ?? 0);
+                        $remainingAmount = $totalWithShipping - $receivedAmount;
+                        
+                        // Determine payment status
+                        $paymentStatus = 'unpaid';
+                        if ($receivedAmount >= $totalWithShipping) {
+                            $paymentStatus = 'fully_paid';
+                        } elseif ($receivedAmount > 0) {
+                            $paymentStatus = 'partially_paid';
+                        }
+                        
+                        return [
+                            'id' => $sale->id,
+                            'client_name' => $sale->client_name,
+                            'total_amount' => $sale->total_amount,
+                            'shipping_amount' => $sale->shipping_amount,
+                            'received_amount' => $receivedAmount,
+                            'remaining_amount' => $remainingAmount,
+                            'payment_date' => $sale->payment_date,
+                            'status' => $sale->status,
+                            'payment_status' => $paymentStatus,
+                            'payments' => $sale->payments ? $sale->payments->toArray() : []
+                        ];
+                    })
                 ];
             });
 
@@ -177,33 +223,45 @@ class AdminReportsController extends Controller
     {
         $totalSellers = User::where('role', 'vendedora')->count();
         
-        // Total sale values (full sale amounts)
-        $totalSaleValue = Sale::whereYear('payment_date', $year)
+        // Get all non-cancelled sales for the period
+        $allSales = Sale::whereYear('payment_date', $year)
             ->whereMonth('payment_date', $month)
-            ->sum('total_amount');
+            ->where('status', '!=', 'cancelado')
+            ->with('payments')
+            ->get();
             
-        // Total received amounts (payments received)
-        $totalReceivedAmount = Sale::whereYear('payment_date', $year)
-            ->whereMonth('payment_date', $month)
-            ->sum('received_amount');
+        // Total sale values: Expected amount including shipping
+        $totalShipping = $allSales->sum('shipping_amount');
+        $totalSaleValue = $allSales->sum('total_amount') + $totalShipping;
             
-        $approvedSaleValue = Sale::where('status', 'aprovado')
-            ->whereYear('payment_date', $year)
-            ->whereMonth('payment_date', $month)
-            ->sum('total_amount');
-            
-        $approvedReceivedAmount = Sale::where('status', 'aprovado')
-            ->whereYear('payment_date', $year)
-            ->whereMonth('payment_date', $month)
-            ->sum('received_amount');
-            
-        $totalCommissions = Sale::where('status', 'aprovado')
-            ->whereYear('payment_date', $year)
-            ->whereMonth('payment_date', $month)
-            ->get()
-            ->sum(function ($sale) {
-                return $this->calculateSaleCommission($sale);
-            });
+        // Total received amounts using proper payment system handling
+        $totalReceivedAmount = 0;
+        foreach ($allSales as $sale) {
+            $approvedPayments = $sale->payments ? $sale->payments->where('status', 'approved') : collect();
+            $receivedAmount = $approvedPayments->count() > 0 
+                ? $approvedPayments->sum('amount')
+                : ($sale->received_amount ?? 0);
+            $totalReceivedAmount += $receivedAmount;
+        }
+        
+        // Financial flow logic
+        $approvedReceivedAmount = $totalReceivedAmount; // Total actually received
+        $pendingReceivedAmount = max(0, $totalSaleValue - $totalReceivedAmount); // Amount still owed
+        
+        // For compatibility (order status based)
+        $approvedSaleValue = $allSales->where('status', 'aprovado')->sum('total_amount');
+        $pendingSaleValue = $allSales->where('status', 'pendente')->sum('total_amount');
+        
+        // Total commissions calculation
+        $commissionBase = max(0, $totalReceivedAmount - $totalShipping);
+        $totalCommissions = 0;
+        
+        // Calculate commissions for each sale based on received amounts
+        foreach ($allSales as $sale) {
+            if ($sale->status === 'aprovado') {
+                $totalCommissions += $this->calculateSaleCommission($sale);
+            }
+        }
 
         $sellersWithMeta = User::where('role', 'vendedora')
             ->whereHas('sales', function ($query) use ($month, $year) {
@@ -234,9 +292,10 @@ class AdminReportsController extends Controller
             // Received amounts (payments received)
             'totalReceivedAmount' => $totalReceivedAmount,
             'approvedReceivedAmount' => $approvedReceivedAmount,
-            // Remaining amounts
-            'totalRemainingAmount' => $totalSaleValue - $totalReceivedAmount,
-            'approvedRemainingAmount' => $approvedSaleValue - $approvedReceivedAmount,
+            // Remaining amounts (financial flow logic)
+            'totalRemainingAmount' => $pendingReceivedAmount,
+            'approvedRemainingAmount' => max(0, $approvedSaleValue - $approvedReceivedAmount),
+            'pendingReceivedAmount' => $pendingReceivedAmount,
             // Legacy fields for compatibility
             'totalSales' => $totalSaleValue,
             'approvedSales' => $approvedSaleValue,

@@ -304,7 +304,14 @@ class Sale extends Model
 
     public function getTotalPaidAmount(): float
     {
-        return $this->approvedPayments()->sum('amount');
+        // Check if there are actual approved payments (partial payment system)
+        $approvedPayments = $this->approvedPayments();
+        if ($approvedPayments->count() > 0) {
+            return $approvedPayments->sum('amount');
+        }
+        
+        // Fall back to received_amount for simple payment system
+        return (float) ($this->received_amount ?? 0);
     }
 
     public function getTotalPendingAmount(): float

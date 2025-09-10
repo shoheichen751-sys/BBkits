@@ -92,29 +92,53 @@ export default function Dashboard({ stats, recent_approvals }) {
 
                         {/* Quick Actions */}
                         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">🔧 Ações Rápidas - Aprovação de Pagamentos</h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Clique nos botões abaixo para ir diretamente à página de aprovações e processar pagamentos pendentes.
+                            </p>
                             <div className="flex flex-wrap gap-4">
                                 <Link
                                     href={route('finance.orders.index', { status: 'pending_payment' })}
-                                    className="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2"
+                                    className="bg-yellow-500 text-white px-6 py-3 rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2 shadow-md"
                                 >
                                     <span>⏳</span>
-                                    Revisar Pagamentos Iniciais
+                                    <div className="flex flex-col items-start">
+                                        <span className="font-semibold">Aprovar Pagamentos Iniciais</span>
+                                        <span className="text-xs text-yellow-100">({stats.pending_payments} pendentes)</span>
+                                    </div>
                                 </Link>
                                 <Link
                                     href={route('finance.orders.index', { status: 'pending_final_payment' })}
-                                    className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+                                    className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 shadow-md"
                                 >
                                     <span>🟠</span>
-                                    Revisar Pagamentos Finais
+                                    <div className="flex flex-col items-start">
+                                        <span className="font-semibold">Aprovar Pagamentos Finais</span>
+                                        <span className="text-xs text-orange-100">({stats.pending_final_payments} pendentes)</span>
+                                    </div>
                                 </Link>
-                                <Link
-                                    href={route('finance.orders.index')}
-                                    className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                                >
-                                    <span>📋</span>
-                                    Ver Todos os Pedidos
-                                </Link>
+                                {(stats.pending_payments > 0 || stats.pending_final_payments > 0) && (
+                                    <Link
+                                        href={route('finance.orders.index')}
+                                        className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2 shadow-md"
+                                    >
+                                        <span>📋</span>
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-semibold">Ver Todos os Pedidos</span>
+                                            <span className="text-xs text-blue-100">Página completa de aprovações</span>
+                                        </div>
+                                    </Link>
+                                )}
+                            </div>
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                <div className="flex items-center">
+                                    <svg className="w-5 h-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className="text-sm text-blue-800">
+                                        <strong>Importante:</strong> Estes botões levam à página de aprovações onde você pode clicar em cada pedido para aprovar/rejeitar pagamentos.
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -165,17 +189,14 @@ export default function Dashboard({ stats, recent_approvals }) {
                                     </svg>
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                    Nenhuma aprovação recente
+                                    📋 Nenhuma aprovação recente
                                 </h3>
-                                <p className="text-gray-500 mb-6">
+                                <p className="text-gray-500 mb-4">
                                     Quando você aprovar pagamentos, eles aparecerão aqui.
                                 </p>
-                                <Link
-                                    href={route('finance.orders.index')}
-                                    className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors"
-                                >
-                                    Ver Pedidos Pendentes
-                                </Link>
+                                <p className="text-sm text-blue-600 font-medium">
+                                    💡 Use os botões "Ações Rápidas" acima para começar a aprovar pagamentos pendentes
+                                </p>
                             </div>
                         )}
                     </div>

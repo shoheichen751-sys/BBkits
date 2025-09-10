@@ -50,6 +50,7 @@ export default function CreateExpanded() {
     const [embroideryFonts, setEmbroideryFonts] = useState([]);
     const [embroideryColors, setEmbroideryColors] = useState([]);
     const [embroideryPositions, setEmbroideryPositions] = useState([]);
+    const [embroideryDesigns, setEmbroideryDesigns] = useState([]);
     const [availableProducts, setAvailableProducts] = useState([]);
     const [loadingOptions, setLoadingOptions] = useState(true);
     
@@ -65,7 +66,8 @@ export default function CreateExpanded() {
         embroidery_text: '',
         embroidery_font: '',
         embroidery_color: '',
-        embroidery_position: ''
+        embroidery_position: '',
+        embroidery_design: ''
     });
     
     // Brazilian size mapping and pricing
@@ -82,16 +84,18 @@ export default function CreateExpanded() {
             try {
                 setLoadingOptions(true);
                 
-                const [fontsRes, colorsRes, positionsRes, productsRes] = await Promise.all([
+                const [fontsRes, colorsRes, positionsRes, designsRes, productsRes] = await Promise.all([
                     axios.get('/api/embroidery/fonts'),
                     axios.get('/api/embroidery/colors'),
                     axios.get('/api/embroidery/positions'),
+                    axios.get('/api/embroidery/designs'),
                     axios.get('/api/products')
                 ]);
                 
                 setEmbroideryFonts(fontsRes.data);
                 setEmbroideryColors(colorsRes.data);
                 setEmbroideryPositions(positionsRes.data);
+                setEmbroideryDesigns(designsRes.data);
                 setAvailableProducts(productsRes.data);
                 
                 // Set default values for current product being added
@@ -99,7 +103,8 @@ export default function CreateExpanded() {
                     ...prev,
                     embroidery_font: fontsRes.data.length > 0 ? fontsRes.data[0].id : '',
                     embroidery_color: colorsRes.data.length > 0 ? colorsRes.data[0].id : '',
-                    embroidery_position: positionsRes.data.length > 0 ? positionsRes.data[0].id : ''
+                    embroidery_position: positionsRes.data.length > 0 ? positionsRes.data[0].id : '',
+                    embroidery_design: designsRes.data.length > 0 ? designsRes.data[0].id : ''
                 }));
                 
                 setLoadingOptions(false);
@@ -162,7 +167,7 @@ export default function CreateExpanded() {
                 product_name: selectedProd.name,
                 product_category: selectedProd.product_category ? selectedProd.product_category.name : 'N/A',
                 unit_price: parseFloat(selectedProd.price || 0),
-                embroidery_text: data.child_name || '' // Auto-fill child name
+                embroidery_text: data.child_name || '' // Auto-fill with current child name
             }));
             // Product selected for customization
         }
@@ -175,8 +180,13 @@ export default function CreateExpanded() {
             return;
         }
         
-        if (!currentProduct.embroidery_text.trim()) {
-            toast.error('Por favor, digite o nome para bordado');
+        if (!currentProduct.embroidery_design) {
+            toast.error('Por favor, selecione um design para bordado');
+            return;
+        }
+        
+        if (!data.child_name || !data.child_name.trim()) {
+            toast.error('Por favor, digite o nome da criança primeiro');
             return;
         }
         
@@ -227,10 +237,11 @@ export default function CreateExpanded() {
             quantity: 1,
             unit_price: 0,
             has_embroidery: true,
-            embroidery_text: '',
+            embroidery_text: data.child_name || '',
             embroidery_font: embroideryFonts.length > 0 ? embroideryFonts[0].id : '',
             embroidery_color: embroideryColors.length > 0 ? embroideryColors[0].id : '',
-            embroidery_position: embroideryPositions.length > 0 ? embroideryPositions[0].id : ''
+            embroidery_position: embroideryPositions.length > 0 ? embroideryPositions[0].id : '',
+            embroidery_design: embroideryDesigns.length > 0 ? embroideryDesigns[0].id : ''
         });
         
         toast.success('Produto adicionado ao carrinho!');
@@ -298,13 +309,14 @@ export default function CreateExpanded() {
         } else {
             // Validate each product in cart
             data.products.forEach((product, index) => {
-                if (!product.embroidery_text || !product.embroidery_text.trim()) {
+                if (!product.embroidery_design) {
                     errors.push({
-                        field: `products[${index}].embroidery_text`,
-                        message: `📝 Produto "${product.product_name}" precisa de um nome para bordado`,
+                        field: `products[${index}].embroidery_design`,
+                        message: `🎨 Produto "${product.product_name}" precisa de um design para bordado`,
                         section: 'Produtos'
                     });
                 }
+                // embroidery_text is now auto-synced from child_name, no need to validate separately
             });
         }
         
@@ -786,14 +798,33 @@ export default function CreateExpanded() {
                                             </div>
                                             
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome para Bordado</label>
-                                                <input
-                                                    type="text"
-                                                    value={currentProduct.embroidery_text}
-                                                    onChange={e => setCurrentProduct(prev => ({...prev, embroidery_text: e.target.value}))}
-                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                                                    placeholder={data.child_name || "Digite o nome"}
-                                                />
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">🎨 Design do Bordado</label>
+                                                <select
+                                                    value={currentProduct.embroidery_design}
+                                                    onChange={e => setCurrentProduct(prev => ({...prev, embroidery_design: e.target.value}))}
+                                                    className="w-full rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 mb-4"
+                                                    disabled={loadingOptions}
+                                                >
+                                                    <option value="">Selecione um design</option>
+                                                    {embroideryDesigns.map((design) => (
+                                                        <option key={design.id} value={design.id}>
+                                                            {design.name} - {design.description}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                
+                                                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <span className="text-blue-600">📝</span>
+                                                        <span className="text-blue-700 font-medium">Nome para bordado:</span>
+                                                        <span className="text-blue-900 font-semibold">
+                                                            {data.child_name || 'Digite o nome da criança abaixo'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-blue-600 mt-1">
+                                                        O nome será automaticamente usado para todos os bordados
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -876,7 +907,7 @@ export default function CreateExpanded() {
                                             <button
                                                 type="button"
                                                 onClick={addProductToCart}
-                                                disabled={!currentProduct.product_id || !currentProduct.embroidery_text.trim()}
+                                                disabled={!currentProduct.product_id || !currentProduct.embroidery_design || !data.child_name?.trim()}
                                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -907,6 +938,7 @@ export default function CreateExpanded() {
                                                             {product.embroidery_text} • Tamanho: {product.size} • Qtd: {product.quantity}
                                                         </div>
                                                         <div className="text-xs text-gray-500">
+                                                            {embroideryDesigns.find(d => d.id == product.embroidery_design)?.name || 'Sem design'} • 
                                                             {embroideryFonts.find(f => f.id == product.embroidery_font)?.display_name || 'Fonte'} • 
                                                             {embroideryColors.find(c => c.id == product.embroidery_color)?.name || 'Cor'} • 
                                                             {embroideryPositions.find(p => p.id == product.embroidery_position)?.display_name || 'Posição'}
@@ -1128,11 +1160,22 @@ export default function CreateExpanded() {
                                             name="child_name"
                                             value={data.child_name}
                                             onChange={e => {
-                                                setData('child_name', e.target.value);
-                                                // Auto-fill current product embroidery text if it's empty
-                                                if (currentProduct.product_id && !currentProduct.embroidery_text) {
-                                                    setCurrentProduct(prev => ({...prev, embroidery_text: e.target.value}));
+                                                const newChildName = e.target.value;
+                                                setData('child_name', newChildName);
+                                                
+                                                // Auto-sync to current product embroidery text
+                                                if (currentProduct.product_id) {
+                                                    setCurrentProduct(prev => ({...prev, embroidery_text: newChildName}));
                                                 }
+                                                
+                                                // Auto-sync to ALL products already in cart
+                                                if (data.products.length > 0) {
+                                                    setData('products', data.products.map(product => ({
+                                                        ...product,
+                                                        embroidery_text: newChildName
+                                                    })));
+                                                }
+                                                
                                                 // Clear validation error
                                                 if (validationErrors.child_name) {
                                                     setValidationErrors(prev => ({ ...prev, child_name: undefined }));

@@ -50,38 +50,8 @@ export default function ReportsIndex({ salesData, commissionData, totalStats }) 
 
     const handleViewSales = async (seller) => {
         setSelectedSeller(seller);
-        // In a real app, you would fetch the sales data here
-        // For now, we'll use mock data
-        const mockSales = [
-            {
-                id: 1,
-                client_name: seller.name + ' - Cliente 1',
-                total_amount: seller.totalSales * 0.3,
-                shipping_amount: seller.totalShipping * 0.3,
-                received_amount: seller.approvedSales * 0.3,
-                payment_date: new Date(),
-                status: 'aprovado'
-            },
-            {
-                id: 2,
-                client_name: seller.name + ' - Cliente 2',
-                total_amount: seller.totalSales * 0.3,
-                shipping_amount: seller.totalShipping * 0.3,
-                received_amount: seller.approvedSales * 0.3,
-                payment_date: new Date(),
-                status: 'aprovado'
-            },
-            {
-                id: 3,
-                client_name: seller.name + ' - Cliente 3',
-                total_amount: seller.totalSales * 0.4,
-                shipping_amount: seller.totalShipping * 0.4,
-                received_amount: seller.pendingSales,
-                payment_date: new Date(),
-                status: 'pendente'
-            }
-        ];
-        setSelectedSellerSales(mockSales);
+        // Use real sales data from the backend
+        setSelectedSellerSales(seller.sales || []);
         setModalOpen(true);
     };
 
