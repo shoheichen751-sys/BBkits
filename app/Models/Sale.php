@@ -121,7 +121,18 @@ class Sale extends Model
         // Processing fields
         'is_processing',
         'processing_started_at',
-        'processing_token'
+        'processing_token',
+        // Product specifications for inventory control
+        'mesa_livre_details',
+        'chaveiros',
+        'kit_main_color',
+        'alcas',
+        'faixa',
+        'friso',
+        'vies',
+        'ziper',
+        'production_estimate',
+        'delivery_estimate'
     ];
 
     protected $casts = [
@@ -165,6 +176,9 @@ class Sale extends Model
         'total_amount' => 'decimal:2',
         'shipping_amount' => 'decimal:2',
         'received_amount' => 'decimal:2',
+        // Specification dates
+        'production_estimate' => 'date',
+        'delivery_estimate' => 'date',
     ];
 
     public function user(): BelongsTo

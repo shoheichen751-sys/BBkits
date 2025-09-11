@@ -1082,18 +1082,19 @@ export default function CreateExpanded() {
                                         {errors.received_amount && (
                                             <p className="text-red-500 text-sm mt-1">{errors.received_amount}</p>
                                         )}
-                                        {data.received_amount && data.total_amount && (
-                                            <p className="text-sm text-gray-600 mt-1">
+                                        {/* Simplified payment status message - stable rendering */}
+                                        {data.received_amount && data.total_amount && parseFloat(data.received_amount) > 0 && parseFloat(data.total_amount) > 0 && (
+                                            <div className="text-sm mt-1">
                                                 {parseFloat(data.received_amount) < parseFloat(data.total_amount) ? (
-                                                    <span className="text-orange-600">
+                                                    <div className="text-orange-600">
                                                         ⚠️ Pagamento parcial - Restante: {formatBRL(parseFloat(data.total_amount) - parseFloat(data.received_amount))}
-                                                    </span>
+                                                    </div>
                                                 ) : (
-                                                    <span className="text-green-600">
+                                                    <div className="text-green-600">
                                                         ✅ Pagamento completo
-                                                    </span>
+                                                    </div>
                                                 )}
-                                            </p>
+                                            </div>
                                         )}
                                     </div>
 
@@ -1304,6 +1305,169 @@ export default function CreateExpanded() {
                                             className="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                                             placeholder="01234-567"
                                         />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Product Specifications Section - Manual Entry by Sales Staff */}
+                            <div className="bg-white rounded-xl shadow-md p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                    <span className="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center">
+                                        🎨
+                                    </span>
+                                    Especificações do Kit (Preenchimento Manual)
+                                </h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Mesa livre (detalhes no bolso frontal) *
+                                        </label>
+                                        <textarea
+                                            value={data.mesa_livre_details || ''}
+                                            onChange={e => setData('mesa_livre_details', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            rows={3}
+                                            placeholder="Ex: Bolso frontal com detalhes específicos..."
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Chaveiros *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.chaveiros || ''}
+                                            onChange={e => setData('chaveiros', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            placeholder="Ex: 2x chaveiros personalizados"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Cor principal do kit *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.kit_main_color || ''}
+                                            onChange={e => setData('kit_main_color', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            placeholder="Ex: Azul marinho"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Alças *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.alcas || ''}
+                                            onChange={e => setData('alcas', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            placeholder="Ex: Pretas, material resistente"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Faixa *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.faixa || ''}
+                                            onChange={e => setData('faixa', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            placeholder="Ex: Rosa com detalhes dourados"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Friso (contorno da bolsa) *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.friso || ''}
+                                            onChange={e => setData('friso', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            placeholder="Ex: Contorno branco"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Viés (contorno dos bolsos laterais) *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.vies || ''}
+                                            onChange={e => setData('vies', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            placeholder="Ex: Azul claro nos bolsos laterais"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Zíper *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.ziper || ''}
+                                            onChange={e => setData('ziper', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            placeholder="Ex: Dourado YKK"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Previsão de confecção *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={data.production_estimate || ''}
+                                            onChange={e => setData('production_estimate', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Previsão de entrega *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={data.delivery_estimate || ''}
+                                            onChange={e => setData('delivery_estimate', e.target.value)}
+                                            className="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-orange-500 text-lg">ℹ️</span>
+                                        <div>
+                                            <h4 className="text-orange-800 font-medium">Controle de Inventário - Etapa 3</h4>
+                                            <p className="text-orange-700 text-sm">
+                                                Estas especificações são essenciais para o controle de inventário e planejamento da produção.
+                                                Todos os campos são obrigatórios para garantir informações completas ao cliente.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

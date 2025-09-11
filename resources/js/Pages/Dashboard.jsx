@@ -641,33 +641,109 @@ export default function Dashboard() {
                                     {recentSales && recentSales.length > 0 ? (
                                         <div className="space-y-4">
                                             {recentSales.map((sale, index) => (
-                                                <div key={sale.id} className="flex items-center justify-between p-4 bg-white/50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-                                                    <div className="flex-1">
+                                                <div key={sale.id} className="p-4 bg-white/50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                                                    {/* Header with client name and status */}
+                                                    <div className="flex items-center justify-between mb-3">
                                                         <div className="flex items-center gap-3">
                                                             <div className={`w-3 h-3 rounded-full ${
                                                                 sale.status === 'aprovado' ? 'bg-green-500' :
                                                                 sale.status === 'rejeitado' ? 'bg-red-500' :
                                                                 'bg-yellow-500'
                                                             }`}></div>
-                                                            <span className="font-medium text-gray-800">{sale.client_name}</span>
+                                                            <span className="font-bold text-gray-900">{sale.client_name}</span>
+                                                            {sale.child_name && (
+                                                                <span className="text-sm bg-pink-100 text-pink-700 px-2 py-1 rounded-full font-medium">
+                                                                    👶 {sale.child_name}
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                        <p className="text-sm text-gray-600 mt-1">
-                                                            Recebido: {formatBRL(sale.received_amount || 0)} • {new Date(sale.payment_date).toLocaleDateString('pt-BR')}
-                                                        </p>
+                                                        <div className="text-right">
+                                                            <p className="font-bold text-gray-800 text-lg">
+                                                                {formatBRL(sale.total_amount || 0)}
+                                                            </p>
+                                                            <span className={`text-xs px-2 py-1 rounded-full ${
+                                                                sale.status === 'aprovado' ? 'bg-green-100 text-green-800' :
+                                                                sale.status === 'rejeitado' ? 'bg-red-100 text-red-800' :
+                                                                'bg-yellow-100 text-yellow-800'
+                                                            }`}>
+                                                                {sale.status === 'aprovado' ? 'Aprovado' :
+                                                                 sale.status === 'rejeitado' ? 'Rejeitado' :
+                                                                 'Pendente'}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <p className="font-bold text-gray-800">
-                                                            {formatBRL(sale.total_amount || 0)}
-                                                        </p>
-                                                        <span className={`text-xs px-2 py-1 rounded-full ${
-                                                            sale.status === 'aprovado' ? 'bg-green-100 text-green-800' :
-                                                            sale.status === 'rejeitado' ? 'bg-red-100 text-red-800' :
-                                                            'bg-yellow-100 text-yellow-800'
-                                                        }`}>
-                                                            {sale.status === 'aprovado' ? 'Aprovado' :
-                                                             sale.status === 'rejeitado' ? 'Rejeitado' :
-                                                             'Pendente'}
-                                                        </span>
+
+                                                    {/* Product Details */}
+                                                    {sale.sale_products && sale.sale_products.length > 0 ? (
+                                                        <div className="mb-3">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                                {sale.sale_products.map((saleProduct, idx) => (
+                                                                    <div key={idx} className="text-sm bg-blue-50 rounded-md p-2">
+                                                                        <div className="font-medium text-blue-900">
+                                                                            🛍️ {saleProduct.product?.name || 'Produto'} 
+                                                                            <span className="ml-1 text-blue-700">({saleProduct.size})</span>
+                                                                        </div>
+                                                                        <div className="text-blue-700 text-xs">
+                                                                            Qtd: {saleProduct.quantity} • {formatBRL((saleProduct.unit_price || 0) * (saleProduct.quantity || 1))}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        /* Fallback for old sales without sale_products */
+                                                        sale.product_category && (
+                                                            <div className="mb-3">
+                                                                <div className="text-sm bg-blue-50 rounded-md p-2">
+                                                                    <div className="font-medium text-blue-900">
+                                                                        🛍️ {sale.product_category?.name || 'Produto'} 
+                                                                        <span className="ml-1 text-blue-700">({sale.product_size || 'N/A'})</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    )}
+
+                                                    {/* Embroidery Details */}
+                                                    <div className="mb-3">
+                                                        <div className="text-sm bg-purple-50 rounded-md p-2">
+                                                            <div className="flex items-center gap-2 text-purple-900 font-medium">
+                                                                <span>🎨</span>
+                                                                <span>Bordado:</span>
+                                                                {sale.embroidery_design?.name && (
+                                                                    <span className="bg-purple-100 px-2 py-0.5 rounded text-xs">
+                                                                        {sale.embroidery_design.name}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-purple-700 text-xs mt-1 grid grid-cols-1 sm:grid-cols-3 gap-1">
+                                                                {sale.embroidery_text && (
+                                                                    <span>✍️ "{sale.embroidery_text}"</span>
+                                                                )}
+                                                                {sale.embroidery_font && (
+                                                                    <span>🔤 Fonte: {sale.embroidery_font}</span>
+                                                                )}
+                                                                {sale.embroidery_color && (
+                                                                    <span>🎨 Cor: {sale.embroidery_color}</span>
+                                                                )}
+                                                            </div>
+                                                            {sale.embroidery_position && (
+                                                                <div className="text-purple-600 text-xs mt-1">
+                                                                    📍 Posição: {sale.embroidery_position}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Payment and Date Info */}
+                                                    <div className="flex justify-between items-center text-sm text-gray-600 pt-2 border-t border-gray-200">
+                                                        <div className="flex items-center gap-4">
+                                                            <span>💰 Recebido: {formatBRL(sale.received_amount || 0)}</span>
+                                                            <span>📅 {new Date(sale.payment_date).toLocaleDateString('pt-BR')}</span>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            ID: #{sale.unique_token || sale.id}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}

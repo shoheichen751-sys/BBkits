@@ -188,34 +188,199 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
 
                     {/* Order Details */}
                     <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalhes do Pedido</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm text-gray-600">Nome da Criança</p>
-                                <p className="font-medium text-gray-900">{sale.child_name}</p>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">🛍️ Detalhes do Pedido</h3>
+                        
+                        {/* Products Section */}
+                        <div className="mb-6">
+                            <h4 className="text-md font-semibold text-gray-800 mb-4">Produtos Comprados:</h4>
+                            <div className="space-y-3">
+                                {sale.sale_products && sale.sale_products.length > 0 ? (
+                                    sale.sale_products.map((saleProduct, index) => (
+                                        <div key={index} className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <div className="font-semibold text-blue-900">
+                                                        {saleProduct.product?.name || 'Produto'}
+                                                    </div>
+                                                    <div className="text-sm text-blue-700 mt-1">
+                                                        <span className="inline-block mr-4">📏 Tamanho: <strong>{saleProduct.size || 'N/A'}</strong></span>
+                                                        <span className="inline-block">📦 Quantidade: <strong>{saleProduct.quantity || 1}</strong></span>
+                                                    </div>
+                                                    {saleProduct.product?.description && (
+                                                        <p className="text-xs text-blue-600 mt-2">{saleProduct.product.description}</p>
+                                                    )}
+                                                </div>
+                                                <div className="text-right ml-4">
+                                                    <div className="text-sm text-gray-600">Preço unitário</div>
+                                                    <div className="font-bold text-blue-900">{formatBRL(saleProduct.unit_price || 0)}</div>
+                                                    {saleProduct.quantity > 1 && (
+                                                        <div className="text-xs text-blue-700 mt-1">
+                                                            Total: {formatBRL((saleProduct.unit_price || 0) * (saleProduct.quantity || 1))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    // Fallback for old sales without sale_products
+                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <div className="font-semibold text-blue-900">
+                                                    {sale.product_category || 'Kit Personalizado'}
+                                                </div>
+                                                <div className="text-sm text-blue-700">
+                                                    📏 Tamanho: <strong>{sale.product_size || 'N/A'}</strong>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-blue-900">{formatBRL(sale.total_amount || 0)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-600">Bordado</p>
-                                <p className="font-medium text-gray-900">
-                                    {sale.embroidery_color} • {sale.embroidery_font} • {sale.embroidery_position}
-                                </p>
+                        </div>
+
+                        {/* Embroidery Details Section */}
+                        <div className="mb-6">
+                            <h4 className="text-md font-semibold text-gray-800 mb-4">🎨 Personalização do Bordado:</h4>
+                            <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="text-sm text-purple-600">👶 Nome da Criança</div>
+                                        <div className="font-semibold text-purple-900">{sale.child_name || 'N/A'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-purple-600">✍️ Texto do Bordado</div>
+                                        <div className="font-semibold text-purple-900">"{sale.embroidery_text || sale.child_name || 'N/A'}"</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-purple-600">🎭 Design Escolhido</div>
+                                        <div className="font-semibold text-purple-900">{sale.embroidery_design?.name || 'Design Personalizado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-purple-600">🔤 Fonte</div>
+                                        <div className="font-semibold text-purple-900">{sale.embroidery_font || 'N/A'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-purple-600">🎨 Cor do Bordado</div>
+                                        <div className="font-semibold text-purple-900">{sale.embroidery_color || 'N/A'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-purple-600">📍 Posição</div>
+                                        <div className="font-semibold text-purple-900">{sale.embroidery_position || 'N/A'}</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-600">Valor Total com Frete</p>
-                                <p className="font-medium text-gray-900">
-                                    {formatBRL(parseFloat(sale.total_amount) + parseFloat(sale.shipping_amount || 0))}
-                                </p>
+                        </div>
+
+                        {/* Kit Specifications Section */}
+                        <div className="mb-6">
+                            <h4 className="text-md font-semibold text-gray-800 mb-4">🎨 Especificações do Kit:</h4>
+                            <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="text-sm text-orange-600">📋 Mesa livre</div>
+                                        <div className="font-medium text-orange-900">{sale.mesa_livre_details || 'Não especificado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-orange-600">🗝️ Chaveiros</div>
+                                        <div className="font-medium text-orange-900">{sale.chaveiros || 'Não especificado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-orange-600">🌈 Cor principal</div>
+                                        <div className="font-medium text-orange-900">{sale.kit_main_color || 'Não especificado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-orange-600">👜 Alças</div>
+                                        <div className="font-medium text-orange-900">{sale.alcas || 'Não especificado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-orange-600">🎀 Faixa</div>
+                                        <div className="font-medium text-orange-900">{sale.faixa || 'Não especificado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-orange-600">⭕ Friso</div>
+                                        <div className="font-medium text-orange-900">{sale.friso || 'Não especificado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-orange-600">📐 Viés</div>
+                                        <div className="font-medium text-orange-900">{sale.vies || 'Não especificado'}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-orange-600">🔒 Zíper</div>
+                                        <div className="font-medium text-orange-900">{sale.ziper || 'Não especificado'}</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-600">Valor Pago</p>
-                                <p className="font-medium text-gray-900">
-                                    {formatBRL(paidAmount)}
-                                    {remainingAmount > 0 && (
-                                        <span className="text-sm text-orange-600 ml-2">
-                                            (Falta {formatBRL(remainingAmount)})
-                                        </span>
-                                    )}
-                                </p>
+                        </div>
+
+                        {/* Production Timeline Section */}
+                        <div className="mb-6">
+                            <h4 className="text-md font-semibold text-gray-800 mb-4">📅 Cronograma de Produção:</h4>
+                            <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="text-sm text-green-600">🏭 Previsão de confecção</div>
+                                        <div className="font-semibold text-green-900">
+                                            {sale.production_estimate 
+                                                ? new Date(sale.production_estimate).toLocaleDateString('pt-BR')
+                                                : 'Não definido'
+                                            }
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-green-600">🚚 Previsão de entrega</div>
+                                        <div className="font-semibold text-green-900">
+                                            {sale.delivery_estimate 
+                                                ? new Date(sale.delivery_estimate).toLocaleDateString('pt-BR')
+                                                : 'Não definido'
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-3 p-3 bg-green-100 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-green-600 text-sm">ℹ️</span>
+                                        <div className="text-green-700 text-sm">
+                                            <strong>Importante:</strong> Estas são previsões e podem sofrer alterações devido ao processo de produção e logística. 
+                                            Entraremos em contato caso haja mudanças significativas nas datas.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Financial Summary */}
+                        <div className="border-t pt-4">
+                            <h4 className="text-md font-semibold text-gray-800 mb-4">💰 Resumo Financeiro:</h4>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">Subtotal dos Produtos</span>
+                                    <span className="font-medium">{formatBRL(sale.total_amount || 0)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">Frete</span>
+                                    <span className="font-medium">{formatBRL(sale.shipping_amount || 0)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-lg font-bold border-t pt-3">
+                                    <span>Total do Pedido</span>
+                                    <span className="text-green-600">
+                                        {formatBRL(parseFloat(sale.total_amount || 0) + parseFloat(sale.shipping_amount || 0))}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-blue-600">Valor Já Pago</span>
+                                    <span className="font-medium text-blue-600">{formatBRL(paidAmount)}</span>
+                                </div>
+                                {remainingAmount > 0 && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-orange-600">Valor Restante</span>
+                                        <span className="font-bold text-orange-600">{formatBRL(remainingAmount)}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

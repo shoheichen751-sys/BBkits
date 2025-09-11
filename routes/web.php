@@ -99,13 +99,33 @@ Route::get('/dashboard', function () {
             $pendingSalesTotal = max(0, $totalSalesAmount - $approvedSalesTotal);
             $totalShipping = $allMonthlySales->sum('shipping_amount');
             
-            // Commission base: Total received amount minus shipping (commission eligible amount)
-            $commissionBase = max(0, $approvedSalesTotal - $totalShipping);
+            // Commission base: Use correct calculation from approved, fully paid sales only
+            $commissionBase = $user->sales()
+                ->where('status', 'aprovado')
+                ->whereYear('payment_date', $currentYear)
+                ->whereMonth('payment_date', $currentMonth)
+                ->with('payments')
+                ->get()
+                ->filter(function ($sale) {
+                    // Only include sales that are fully paid
+                    return $sale->hasPartialPayments() ? $sale->isFullyPaid() : true;
+                })
+                ->sum(function ($sale) {
+                    // Use payment-based commission calculation if has partial payments
+                    if ($sale->hasPartialPayments()) {
+                        return $sale->getCommissionBaseAmountForPayments();
+                    }
+                    return ($sale->received_amount ?: 0) - ($sale->shipping_amount ?: 0);
+                });
 
             $monthlyCommission = $user->getMonthlyCommissionTotal($currentMonth, $currentYear);
             $monthlySalesTotal = $user->getMonthlySalesTotal($currentMonth, $currentYear);
 
-            $recentSales = $user->sales()->orderBy('created_at', 'desc')->limit(5)->get();
+            $recentSales = $user->sales()
+                ->with(['saleProducts.product', 'embroideryDesign'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
             $monthlyProgress = $commissionService->getMonthlyProgress($user, $currentMonth, $currentYear);
             
             // Get Top Performers ranking using service

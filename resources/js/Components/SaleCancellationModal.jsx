@@ -86,9 +86,14 @@ export default function SaleCancellationModal({ show, onClose, onConfirm, sale, 
                                                 <p className="text-sm text-gray-500 mb-4">
                                                     {sale ? `Tem certeza que deseja cancelar a venda para ${sale.client_name}?` : ''}
                                                 </p>
-                                                <p className="text-xs text-orange-600 mb-4 bg-orange-50 p-2 rounded">
-                                                    ⚠️ Esta ação irá cancelar a venda e remover os valores das estatísticas gerais e comissão da vendedora.
-                                                </p>
+                                                <div className="text-xs mb-4 space-y-2">
+                                                    <p className="text-orange-600 bg-orange-50 p-2 rounded">
+                                                        ⚠️ Esta ação irá cancelar a venda e remover os valores das estatísticas gerais e comissão da vendedora.
+                                                    </p>
+                                                    <p className="text-blue-600 bg-blue-50 p-2 rounded">
+                                                        🔐 Senha de administrador necessária para confirmar o cancelamento. Vendedoras podem solicitar, mas apenas administradores podem autorizar.
+                                                    </p>
+                                                </div>
                                                 
                                                 <div className="space-y-4">
                                                     <div>

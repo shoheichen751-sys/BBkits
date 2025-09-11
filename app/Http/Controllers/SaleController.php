@@ -142,6 +142,18 @@ class SaleController extends Controller
             'delivery_state' => 'nullable|string|size:2',
             'delivery_zipcode' => 'nullable|string|regex:/^\d{5}-?\d{3}$/',
             
+            // Product specifications - REQUIRED for inventory control
+            'mesa_livre_details' => 'required|string|max:1000',
+            'chaveiros' => 'required|string|max:255',
+            'kit_main_color' => 'required|string|max:255',
+            'alcas' => 'required|string|max:255',
+            'faixa' => 'required|string|max:255',
+            'friso' => 'required|string|max:255',
+            'vies' => 'required|string|max:255',
+            'ziper' => 'required|string|max:255',
+            'production_estimate' => 'required|date|after:today',
+            'delivery_estimate' => 'required|date|after:production_estimate',
+            
             // Optional
             'notes' => 'nullable|string',
             'preferred_delivery_date' => 'nullable|date'
@@ -698,18 +710,21 @@ class SaleController extends Controller
 
     public function cancel(Request $request, Sale $sale)
     {
-        // Only admins can cancel sales
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Unauthorized. Only administrators can cancel sales.');
-        }
+        // Any authenticated user can request cancellation, but admin password is required for authorization
 
         $validated = $request->validate([
             'admin_password' => 'required|string',
             'explanation' => 'required|string|min:10|max:1000',
         ]);
 
-        // Verify admin password
-        if (!Hash::check($validated['admin_password'], auth()->user()->password)) {
+        // Verify admin password against any admin user (not just current user)
+        $isValidAdminPassword = \App\Models\User::where('role', 'admin')
+            ->get()
+            ->contains(function ($admin) use ($validated) {
+                return Hash::check($validated['admin_password'], $admin->password);
+            });
+            
+        if (!$isValidAdminPassword) {
             return response()->json(['admin_password' => 'Senha do administrador incorreta.'], 422);
         }
 
@@ -744,7 +759,13 @@ class SaleController extends Controller
         $sale = Sale::where('unique_token', $token)->firstOrFail();
         
         return Inertia::render('Sales/ClientPage', [
-            'sale' => $sale->load(['user', 'productionAdmin', 'financeAdmin']),
+            'sale' => $sale->load([
+                'user', 
+                'productionAdmin', 
+                'financeAdmin',
+                'saleProducts.product',  // Load product details
+                'embroideryDesign'       // Load embroidery design details
+            ]),
             'orderStatus' => $sale->getOrderStatusLabel(),
             'orderStatusColor' => $sale->getOrderStatusColor(),
             'paidAmount' => $sale->getTotalPaidAmount(),

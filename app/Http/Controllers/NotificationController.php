@@ -15,10 +15,18 @@ class NotificationController extends Controller
         $this->notificationService = $notificationService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $notifications = $this->notificationService->getUserNotifications(auth()->id());
         
+        // If this is an AJAX request (from the NotificationBell component)
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'notifications' => $notifications
+            ]);
+        }
+        
+        // Otherwise return the Inertia page for /notifications route
         return Inertia::render('Notifications/Index', [
             'notifications' => $notifications
         ]);

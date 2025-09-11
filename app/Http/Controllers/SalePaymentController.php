@@ -14,16 +14,32 @@ class SalePaymentController extends Controller
     {
         $payments = $sale->payments()->with('approvedBy')->orderBy('payment_date', 'desc')->get();
         
+        // Calculate payment summary using ONLY payment records (not legacy received_amount)
+        $totalWithShipping = $sale->total_amount + $sale->shipping_amount;
+        $approvedPaidAmount = $sale->approvedPayments()->sum('amount');
+        $pendingAmount = $sale->pendingPayments()->sum('amount');
+        $remainingAmount = max(0, $totalWithShipping - $approvedPaidAmount);
+        
+        // Calculate progress and status based on approved payments only
+        $progress = $totalWithShipping > 0 ? ($approvedPaidAmount / $totalWithShipping) * 100 : 0;
+        
+        $status = 'unpaid';
+        if ($approvedPaidAmount >= $totalWithShipping) {
+            $status = 'fully_paid';
+        } elseif ($approvedPaidAmount > 0) {
+            $status = 'partially_paid';
+        }
+        
         return Inertia::render('Sales/Payments/Index', [
             'sale' => $sale,
             'payments' => $payments,
             'paymentSummary' => [
-                'total_amount' => $sale->total_amount + $sale->shipping_amount,
-                'paid_amount' => $sale->getTotalPaidAmount(),
-                'pending_amount' => $sale->getTotalPendingAmount(),
-                'remaining_amount' => $sale->getRemainingAmount(),
-                'progress' => $sale->getPaymentProgress(),
-                'status' => $sale->getPaymentStatus(),
+                'total_amount' => $totalWithShipping,
+                'paid_amount' => $approvedPaidAmount,
+                'pending_amount' => $pendingAmount,
+                'remaining_amount' => $remainingAmount,
+                'progress' => round($progress, 2),
+                'status' => $status,
             ]
         ]);
     }

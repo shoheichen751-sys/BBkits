@@ -568,7 +568,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                                             />
                                         </svg>
-                                        <span className="nav-text">💼 Vendas</span>
+                                        <span className="nav-text">Vendas</span>
                                     </NavLink>
 
                                     {/* Finance Admin Navigation */}
@@ -583,7 +583,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             <svg className="nav-icon icon-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                                             </svg>
-                                            <span className="nav-text">💰 Financeiro</span>
+                                            <span className="nav-text">Financeiro</span>
                                         </NavLink>
                                     )}
 
@@ -599,7 +599,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             <svg className="nav-icon icon-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 7.172V5L8 4z" />
                                             </svg>
-                                            <span className="nav-text">🏭 Produção</span>
+                                            <span className="nav-text">Produção</span>
                                         </NavLink>
                                     )}
 
@@ -628,7 +628,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                         d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                                                     />
                                                 </svg>
-                                                <span className="nav-text">🛡️ Admin</span>
+                                                <span className="nav-text">Admin</span>
                                             </NavLink>
 
                                     {/* Manager Dashboard */}
@@ -655,7 +655,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                                                 />
                                             </svg>
-                                            <span className="nav-text">🏢 Gerência</span>
+                                            <span className="nav-text">Gerência</span>
                                         </NavLink>
                                     )}
 
@@ -708,7 +708,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                                                     />
                                                 </svg>
-                                                <span className="nav-text">💰 Financeiro</span>
+                                                <span className="nav-text">Financeiro</span>
                                             </NavLink>
 
                                             <NavLink
@@ -733,7 +733,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                         d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
                                                     />
                                                 </svg>
-                                                <span className="nav-text">🧵 Bordados</span>
+                                                <span className="nav-text">Bordados</span>
                                             </NavLink>
                                         </>
                                     )}
@@ -936,7 +936,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
                                     />
                                 </svg>
-                                📊 Dashboard
+                                Dashboard
                             </ResponsiveNavLink>
 
                             <ResponsiveNavLink
@@ -957,7 +957,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                                     />
                                 </svg>
-                                💼 Minhas Vendas
+                                Minhas Vendas
                             </ResponsiveNavLink>
 
                             {/* Finance Admin Mobile Navigation */}
@@ -970,7 +970,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                                     </svg>
-                                    💰 Financeiro
+                                    Financeiro
                                 </ResponsiveNavLink>
                             )}
 
@@ -984,7 +984,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 7.172V5L8 4z" />
                                     </svg>
-                                    🏭 Produção
+                                    Produção
                                 </ResponsiveNavLink>
                             )}
 
@@ -1009,7 +1009,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                                             />
                                         </svg>
-                                        🛡️ Admin Dashboard
+                                        Admin Dashboard
                                     </ResponsiveNavLink>
 
                             {/* Manager Dashboard Mobile */}
@@ -1032,7 +1032,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                                         />
                                     </svg>
-                                    🏢 Dashboard Gerencial
+                                    Dashboard Gerencial
                                 </ResponsiveNavLink>
                             )}
 
@@ -1054,7 +1054,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M19 7.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
                                             />
                                         </svg>
-                                        👥 Gerenciar Usuários
+                                        Gerenciar Usuários
                                     </ResponsiveNavLink>
 
                                     <ResponsiveNavLink
@@ -1075,7 +1075,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                                             />
                                         </svg>
-                                        💰 Painel Financeiro
+                                        Painel Financeiro
                                     </ResponsiveNavLink>
 
                                     <ResponsiveNavLink
@@ -1096,7 +1096,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
                                             />
                                         </svg>
-                                        🧵 Gerenciar Bordados
+                                        Gerenciar Bordados
                                     </ResponsiveNavLink>
                                 </>
                             )}

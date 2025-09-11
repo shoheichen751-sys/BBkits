@@ -100,13 +100,12 @@ class AdminReportsController extends Controller
                 // Total sale value: Expected amount including shipping
                 $totalSaleValue = $allSales->sum('total_amount') + $totalShipping;
                 
-                // Calculate total received amount across all sales
+                // Calculate total received amount using ONLY approved payment records
                 $totalReceivedAmount = 0;
                 foreach ($allSales as $sale) {
+                    // Only consider approved payment records for commission calculations
                     $approvedPayments = $sale->payments ? $sale->payments->where('status', 'approved') : collect();
-                    $receivedAmount = $approvedPayments->count() > 0 
-                        ? $approvedPayments->sum('amount')
-                        : ($sale->received_amount ?? 0);
+                    $receivedAmount = $approvedPayments->sum('amount');
                     $totalReceivedAmount += $receivedAmount;
                 }
                 
@@ -118,7 +117,8 @@ class AdminReportsController extends Controller
                 $approvedSaleValue = $approvedSales->sum('total_amount');
                 $pendingSaleValue = $pendingSales->sum('total_amount');
                 
-                // Commission base: Total received minus shipping
+                // Commission base: Only from approved payments minus shipping
+                // This ensures consistency with the payment system - commission only from verified payments
                 $commissionBase = max(0, $totalReceivedAmount - $totalShipping);
                 
                 $commission = $this->calculateCommissionForSeller($seller->id, $month, $year);
@@ -153,10 +153,9 @@ class AdminReportsController extends Controller
                     'metaAchieved' => $commissionService->calculateCommissionRate($commissionBase) > 0,
                     // Add actual sales data for modal
                     'sales' => $allSales->map(function ($sale) {
+                        // Use only approved payment records for consistency
                         $approvedPayments = $sale->payments ? $sale->payments->where('status', 'approved') : collect();
-                        $receivedAmount = $approvedPayments->count() > 0 
-                            ? $approvedPayments->sum('amount')
-                            : ($sale->received_amount ?? 0);
+                        $receivedAmount = $approvedPayments->sum('amount');
                         
                         $totalWithShipping = ($sale->total_amount ?? 0) + ($sale->shipping_amount ?? 0);
                         $remainingAmount = $totalWithShipping - $receivedAmount;
@@ -234,13 +233,12 @@ class AdminReportsController extends Controller
         $totalShipping = $allSales->sum('shipping_amount');
         $totalSaleValue = $allSales->sum('total_amount') + $totalShipping;
             
-        // Total received amounts using proper payment system handling
+        // Total received amounts using ONLY approved payment records
         $totalReceivedAmount = 0;
         foreach ($allSales as $sale) {
+            // Only consider approved payment records for consistency
             $approvedPayments = $sale->payments ? $sale->payments->where('status', 'approved') : collect();
-            $receivedAmount = $approvedPayments->count() > 0 
-                ? $approvedPayments->sum('amount')
-                : ($sale->received_amount ?? 0);
+            $receivedAmount = $approvedPayments->sum('amount');
             $totalReceivedAmount += $receivedAmount;
         }
         

@@ -16,7 +16,12 @@ export default function NotificationBell() {
 
     const fetchUnreadCount = async () => {
         try {
-            const response = await axios.get('/notifications/unread-count');
+            const response = await axios.get('/notifications/unread-count', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             setUnreadCount(response.data.count);
         } catch (error) {
             // Silently handle errors to avoid console spam
@@ -26,7 +31,12 @@ export default function NotificationBell() {
 
     const fetchNotifications = async () => {
         try {
-            const response = await axios.get('/notifications');
+            const response = await axios.get('/notifications', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             setNotifications(response.data.notifications || []);
         } catch (error) {
             // Silently handle errors
@@ -36,7 +46,12 @@ export default function NotificationBell() {
 
     const markAsRead = async (notificationId) => {
         try {
-            await axios.post(`/notifications/${notificationId}/read`);
+            await axios.post(`/notifications/${notificationId}/read`, {}, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             fetchUnreadCount();
             fetchNotifications();
         } catch (error) {
@@ -46,7 +61,12 @@ export default function NotificationBell() {
 
     const markAllAsRead = async () => {
         try {
-            await axios.post('/notifications/mark-all-read');
+            await axios.post('/notifications/mark-all-read', {}, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             setUnreadCount(0);
             fetchNotifications();
         } catch (error) {

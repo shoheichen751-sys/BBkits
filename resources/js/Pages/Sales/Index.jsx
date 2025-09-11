@@ -465,25 +465,24 @@ export default function Index({ sales, auth }) {
                                                                     </button>
                                                                 )}
                                                                 {sale.status === 'pendente' && (
-                                                                    <>
-                                                                        <Link 
-                                                                            href={route('sales.edit', sale.id)}
-                                                                            className="action-btn action-btn-edit"
-                                                                        >
-                                                                            <i className="fas fa-edit mr-1"></i>
-                                                                            Editar
-                                                                        </Link>
-                                                                        {/* Only show cancel button to admin users */}
-                                                                        {auth?.user?.role === 'admin' && sale.status !== 'cancelado' && (
-                                                                            <button
-                                                                                onClick={() => handleCancelClick(sale)}
-                                                                                className="action-btn action-btn-delete"
-                                                                            >
-                                                                                <i className="fas fa-ban mr-1"></i>
-                                                                                Cancelar
-                                                                            </button>
-                                                                        )}
-                                                                    </>
+                                                                    <Link 
+                                                                        href={route('sales.edit', sale.id)}
+                                                                        className="action-btn action-btn-edit"
+                                                                    >
+                                                                        <i className="fas fa-edit mr-1"></i>
+                                                                        Editar
+                                                                    </Link>
+                                                                )}
+                                                                {/* Show cancel button for all users but require admin password */}
+                                                                {sale.status !== 'cancelado' && (
+                                                                    <button
+                                                                        onClick={() => handleCancelClick(sale)}
+                                                                        className="action-btn action-btn-delete"
+                                                                        title="Cancelar venda (requer senha do administrador)"
+                                                                    >
+                                                                        <i className="fas fa-ban mr-1"></i>
+                                                                        Cancelar
+                                                                    </button>
                                                                 )}
                                                             </div>
                                                         )
