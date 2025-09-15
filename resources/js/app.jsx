@@ -14,7 +14,9 @@ function route(name, params = {}, absolute = false) {
     let url = '';
     let methods = ['GET', 'HEAD']; // default methods
 
-    const routeData = (window.Ziggy && window.Ziggy.routes[name]) || (Ziggy && Ziggy.routes[name]);
+    // Check for route data in both window.Ziggy and imported Ziggy
+    const routeData = (window.Ziggy && window.Ziggy.routes && window.Ziggy.routes[name]) ||
+                     (Ziggy && Ziggy.routes && Ziggy.routes[name]);
 
     if (routeData) {
         url = routeData.uri;
@@ -23,31 +25,64 @@ function route(name, params = {}, absolute = false) {
         // Replace parameters in the URL
         if (params && typeof params === 'object') {
             Object.keys(params).forEach(key => {
-                url = url.replace(`{${key}}`, params[key]);
-                url = url.replace(`{${key}?}`, params[key]); // optional parameters
+                const value = params[key];
+                url = url.replace(`{${key}}`, value);
+                url = url.replace(`{${key}?}`, value); // optional parameters
             });
         }
 
-        // Add base URL if absolute
-        const baseUrl = (window.Ziggy && window.Ziggy.url) || (Ziggy && Ziggy.url) || '';
-        if (absolute && baseUrl) {
-            url = baseUrl.replace(/\/$/, '') + '/' + url.replace(/^\//, '');
-        } else if (!url.startsWith('/')) {
+        // Clean up any remaining optional parameters
+        url = url.replace(/\{[^}]+\?\}/g, '');
+
+        // Add leading slash if missing
+        if (!url.startsWith('/')) {
             url = '/' + url;
         }
+
+        // Add base URL if absolute
+        if (absolute) {
+            const baseUrl = (window.Ziggy && window.Ziggy.url) || (Ziggy && Ziggy.url) || '';
+            if (baseUrl) {
+                url = baseUrl.replace(/\/$/, '') + url;
+            }
+        }
     } else {
-        // Fallback for unknown routes
-        url = `/${name}`;
+        // Better fallback: try to convert route name to URL path
+        console.warn(`Route '${name}' not found in Ziggy routes`);
+
+        // Convert route names like 'admin.suppliers.index' to '/admin/suppliers'
+        if (name.includes('.')) {
+            const parts = name.split('.');
+            if (parts[parts.length - 1] === 'index') {
+                parts.pop(); // remove 'index'
+            }
+            url = '/' + parts.join('/');
+        } else {
+            url = `/${name}`;
+        }
     }
 
-    // Return route object with methods and url for compatibility
-    return {
+    // Create route object that works as both string and object
+    const routeObj = {
         url: url,
         method: methods[0], // primary method
         methods: methods,
         toString: () => url, // Allow route() to be used as string
         valueOf: () => url
     };
+
+    // Make the object itself act like a string when used in contexts that expect strings
+    return new Proxy(routeObj, {
+        get(target, prop) {
+            if (prop === Symbol.toPrimitive) {
+                return () => url;
+            }
+            if (prop === 'href' || prop === 'pathname') {
+                return url;
+            }
+            return target[prop];
+        }
+    });
 }
 
 // Make route function available globally
@@ -68,6 +103,13 @@ createInertiaApp({
         // Set up Ziggy for routes
         if (props.initialPage && props.initialPage.props.ziggy) {
             window.Ziggy = props.initialPage.props.ziggy;
+        } else if (Ziggy) {
+            window.Ziggy = Ziggy;
+        }
+
+        // Debug: log available routes in development
+        if (process.env.NODE_ENV === 'development' && window.Ziggy) {
+            console.log('Ziggy routes loaded:', Object.keys(window.Ziggy.routes || {}));
         }
 
         root.render(
