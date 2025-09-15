@@ -20,7 +20,7 @@ export default function Index({ materials, filters, stats }) {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('admin.materials.index'), { search, status }, { preserveState: true });
+        router.get('/admin/materials', { search, status }, { preserveState: true });
     };
 
     const getStockBadge = (material) => {
@@ -50,7 +50,7 @@ export default function Index({ materials, filters, stats }) {
                     </div>
                     {canEditMaterials() && (
                         <Link
-                            href={route('admin.materials.create')}
+                            href="/admin/materials/create"
                             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
                         >
                             Novo Material
@@ -224,14 +224,14 @@ export default function Index({ materials, filters, stats }) {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <Link
-                                                href={route('admin.materials.show', material.id)}
+                                                href={`/admin/materials/${material.id}`}
                                                 className="text-purple-600 hover:text-purple-900 mr-3"
                                             >
                                                 Ver
                                             </Link>
                                             {canEditMaterials() && (
                                                 <Link
-                                                    href={route('admin.materials.edit', material.id)}
+                                                    href={`/admin/materials/${material.id}/edit`}
                                                     className="text-indigo-600 hover:text-indigo-900"
                                                 >
                                                     Editar
