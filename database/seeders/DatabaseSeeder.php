@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             EmbroiderySeeder::class,
             ProductSeeder::class,
             SaleSeeder::class,
+            MaterialCategorySeeder::class,
+            SuppliersAndMaterialsSeeder::class,
         ]);
     }
 }

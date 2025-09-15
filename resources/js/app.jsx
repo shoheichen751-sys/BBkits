@@ -9,32 +9,23 @@ import { Toaster } from 'react-hot-toast';
 // Import Ziggy for routing
 import { Ziggy } from './ziggy';
 
-// Simple, reliable route helper that always returns a valid object
+// BULLETPROOF route helper that NEVER returns null
 function route(name, params = {}, absolute = false) {
-    console.log('ROUTE FUNCTION CALLED:', name, params, absolute);
-
-    // Always ensure we have a fallback
-    if (!name) {
-        console.log('No name provided, returning fallback');
-        return createRouteObject('/', ['GET', 'HEAD']);
+    // NEVER return null - always return a valid string
+    if (!name || typeof name !== 'string') {
+        console.warn('Invalid route name provided:', name);
+        return '/dashboard'; // safe fallback
     }
 
     let url = '';
-    let methods = ['GET', 'HEAD']; // default methods
 
     try {
         // Check for route data in both window.Ziggy and imported Ziggy
         const routeData = (window.Ziggy && window.Ziggy.routes && window.Ziggy.routes[name]) ||
                          (Ziggy && Ziggy.routes && Ziggy.routes[name]);
 
-        console.log('Route data found:', !!routeData, 'for route:', name);
-        if (routeData) {
-            console.log('Route data:', routeData);
-        }
-
-        if (routeData) {
+        if (routeData && routeData.uri) {
             url = routeData.uri;
-            methods = routeData.methods || ['GET', 'HEAD'];
 
             // Replace parameters in the URL
             if (params && typeof params === 'object') {
@@ -63,8 +54,8 @@ function route(name, params = {}, absolute = false) {
                 }
             }
         } else {
-            console.log('No route data found, using fallback for:', name);
             // Fallback: convert route name to URL path
+            console.warn('Route not found in Ziggy, using fallback for:', name);
             if (name.includes('.')) {
                 const parts = name.split('.');
                 if (parts[parts.length - 1] === 'index') {
@@ -76,13 +67,17 @@ function route(name, params = {}, absolute = false) {
             }
         }
     } catch (error) {
-        console.error('Route error:', error);
-        // Emergency fallback
-        url = '/' + name.replace(/\./g, '/');
+        console.error('Route generation error:', error, 'for route:', name);
+        // Emergency fallback - never return null
+        url = '/' + String(name).replace(/\./g, '/');
     }
 
-    // For Inertia Link components, just return the URL string
-    console.log('ROUTE RESULT URL:', url, 'type:', typeof url);
+    // GUARANTEE: always return a non-empty string
+    if (!url || typeof url !== 'string') {
+        console.error('Route function would return invalid value:', url, 'for:', name);
+        return '/dashboard'; // ultimate fallback
+    }
+
     return url;
 }
 

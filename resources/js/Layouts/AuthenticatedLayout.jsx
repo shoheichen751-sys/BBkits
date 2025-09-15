@@ -790,7 +790,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             }
                                         >
                                             <Link
-                                                href={route("admin.materials.index")}
+                                                href={typeof route === 'function' ? route("admin.materials.index") : '/admin/materials'}
                                                 className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                             >
                                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -800,7 +800,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             </Link>
                                             {canViewSuppliers() && (
                                                 <Link
-                                                    href={route("admin.suppliers.index")}
+                                                    href={typeof route === 'function' ? route("admin.suppliers.index") : '/admin/suppliers'}
                                                     className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                                 >
                                                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -811,7 +811,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             )}
                                             {canViewInventory() && (
                                                 <Link
-                                                    href={route("admin.inventory.index")}
+                                                    href={typeof route === 'function' ? route("admin.inventory.index") : '/admin/inventory'}
                                                     className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                                 >
                                                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
