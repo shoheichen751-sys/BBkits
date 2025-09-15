@@ -9,12 +9,12 @@ import { Toaster } from 'react-hot-toast';
 // Import Ziggy for routing
 import { Ziggy } from './ziggy';
 
-// BULLETPROOF route helper that NEVER returns null
+// BULLETPROOF route helper that NEVER returns null and ALWAYS returns an object with method
 function route(name, params = {}, absolute = false) {
-    // NEVER return null - always return a valid string
+    // NEVER return null - always return a valid object with method property
     if (!name || typeof name !== 'string') {
         console.warn('Invalid route name provided:', name);
-        return '/dashboard'; // safe fallback
+        return createRouteObject('/dashboard', ['GET', 'HEAD']);
     }
 
     let url = '';
@@ -53,6 +53,10 @@ function route(name, params = {}, absolute = false) {
                     url = baseUrl.replace(/\/$/, '') + url;
                 }
             }
+
+            // Return route object with methods from routeData
+            const methods = routeData.methods || ['GET', 'HEAD'];
+            return createRouteObject(url, methods);
         } else {
             // Fallback: convert route name to URL path
             console.warn('Route not found in Ziggy, using fallback for:', name);
@@ -72,13 +76,13 @@ function route(name, params = {}, absolute = false) {
         url = '/' + String(name).replace(/\./g, '/');
     }
 
-    // GUARANTEE: always return a non-empty string
+    // GUARANTEE: always return a valid route object
     if (!url || typeof url !== 'string') {
         console.error('Route function would return invalid value:', url, 'for:', name);
-        return '/dashboard'; // ultimate fallback
+        return createRouteObject('/dashboard', ['GET', 'HEAD']);
     }
 
-    return url;
+    return createRouteObject(url, ['GET', 'HEAD']);
 }
 
 // Helper function to create consistent route objects
