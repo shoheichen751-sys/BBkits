@@ -442,19 +442,41 @@ export default function AuthenticatedLayout({ header, children }) {
                     background: var(--accent-color);
                 }
                 
-                /* Responsive icon sizes */
+                /* Enhanced icon styling with better colors */
                 .nav-icon {
                     width: 0.875rem;
                     height: 0.875rem;
+                    color: #6b7280; /* Gray-500 for better contrast */
+                    transition: all 0.2s ease;
                 }
-                
+
+                .nav-link:hover .nav-icon {
+                    color: #3b82f6; /* Blue-500 on hover */
+                    transform: scale(1.05);
+                }
+
+                .nav-link.active .nav-icon {
+                    color: white;
+                    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+                }
+
+                /* Icon hover effects */
+                .icon-hover {
+                    transition: all 0.3s ease;
+                }
+
+                .nav-link:hover .icon-hover {
+                    color: #3b82f6;
+                    transform: scale(1.1);
+                }
+
                 @media (min-width: 768px) {
                     .nav-icon {
                         width: 1rem;
                         height: 1rem;
                     }
                 }
-                
+
                 @media (min-width: 1024px) {
                     .nav-icon {
                         width: 1.125rem;
@@ -473,9 +495,54 @@ export default function AuthenticatedLayout({ header, children }) {
                     }
                 }
 
-                /* Better spacing for dropdown menus */
+                /* Enhanced navigation link styling */
+                .nav-link {
+                    border-radius: 0.75rem;
+                    padding: 0.5rem 0.75rem;
+                    transition: all 0.2s ease;
+                    color: #374151; /* Gray-700 */
+                    position: relative;
+                }
+
+                .nav-link:hover {
+                    background: rgba(59, 130, 246, 0.08);
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                    color: #1e40af; /* Blue-800 */
+                }
+
+                .nav-link.active {
+                    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                    color: white;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+                }
+
+                /* Better spacing for dropdown menus with closer positioning */
                 .dropdown-menu {
                     min-width: 200px;
+                }
+
+                /* Enhanced dropdown styling */
+                .dropdown-link {
+                    transition: all 0.2s ease;
+                    color: #374151;
+                    border-radius: 0.5rem;
+                    margin: 0 0.25rem;
+                }
+
+                .dropdown-link:hover {
+                    background-color: #f3f4f6;
+                    color: #1f2937;
+                }
+
+                .dropdown-link svg {
+                    color: #6b7280;
+                    transition: color 0.2s ease;
+                }
+
+                .dropdown-link:hover svg {
+                    color: #3b82f6;
                 }
 
                 /* Compact navigation for tablets */

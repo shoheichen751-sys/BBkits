@@ -19,11 +19,12 @@ export default function DropdownMenu({ trigger, children, className = "" }) {
 
             {isOpen && (
                 <div
-                    className={`absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-2xl bg-white/98 backdrop-blur-20 shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none dropdown-menu ${className}`}
+                    className={`absolute right-0 z-50 mt-0.5 w-56 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-gray-200 focus:outline-none dropdown-menu ${className}`}
                     onMouseEnter={() => setIsOpen(true)}
                     onMouseLeave={() => setIsOpen(false)}
+                    style={{ marginTop: '2px' }}
                 >
-                    <div className="py-2">
+                    <div className="py-1">
                         {children}
                     </div>
                 </div>
