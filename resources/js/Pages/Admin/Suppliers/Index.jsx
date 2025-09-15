@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { route } from 'ziggy-js';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function Index({ suppliers, filters }) {

@@ -6,7 +6,6 @@ import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import NotificationBell from "@/Components/NotificationBell";
 import { Link, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
-import { route } from 'ziggy-js';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
