@@ -1,10 +1,12 @@
 import ApplicationLogo from "@/Components/ApplicationLogo";
 import Dropdown from "@/Components/Dropdown";
+import DropdownMenu from "@/Components/DropdownMenu";
 import NavLink from "@/Components/NavLink";
 import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
 import NotificationBell from "@/Components/NotificationBell";
 import { Link, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
+import { route } from 'ziggy-js';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -461,14 +463,32 @@ export default function AuthenticatedLayout({ header, children }) {
                     }
                 }
                 
-                /* Hide text on smaller screens */
+                /* Hide text on smaller screens, show icons only */
                 .nav-text {
                     display: none;
                 }
-                
-                @media (min-width: 1024px) {
+
+                @media (min-width: 900px) {
                     .nav-text {
                         display: inline;
+                    }
+                }
+
+                /* Better spacing for dropdown menus */
+                .dropdown-menu {
+                    min-width: 200px;
+                }
+
+                /* Compact navigation for tablets */
+                @media (max-width: 1024px) {
+                    .nav-link {
+                        padding: 8px 10px;
+                        gap: 0;
+                    }
+
+                    .nav-icon {
+                        width: 1.125rem;
+                        height: 1.125rem;
                     }
                 }
                 
@@ -538,23 +558,11 @@ export default function AuthenticatedLayout({ header, children }) {
                                         href={route("dashboard")}
                                         active={window.location.pathname === "/dashboard"}
                                         className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                            window.location.pathname === "/dashboard"
-                                                ? "active"
-                                                : ""
+                                            window.location.pathname === "/dashboard" ? "active" : ""
                                         }`}
                                     >
-                                        <svg
-                                            className="nav-icon icon-hover"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-                                            />
+                                        <svg className="nav-icon icon-hover" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M13 9V3h8v6h-8ZM3 13V3h8v10H3Zm10 8V11h8v10h-8ZM3 21v-6h8v6H3Z" />
                                         </svg>
                                         <span className="nav-text">Dashboard</span>
                                     </NavLink>
@@ -563,23 +571,11 @@ export default function AuthenticatedLayout({ header, children }) {
                                         href={route("sales.index")}
                                         active={window.location.pathname.includes("/sales")}
                                         className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                            window.location.pathname.includes("/sales")
-                                                ? "active"
-                                                : ""
+                                            window.location.pathname.includes("/sales") ? "active" : ""
                                         }`}
                                     >
-                                        <svg
-                                            className="nav-icon icon-hover"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                                            />
+                                        <svg className="nav-icon icon-hover" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M7 4V2C7 1.45 7.45 1 8 1h8c.55 0 1 .45 1 1v2h5c.55 0 1 .45 1 1s-.45 1-1 1h-1v11c0 1.66-1.34 3-3 3H6c-1.66 0-3-1.34-3-3V6H2c-.55 0-1-.45-1-1s.45-1 1-1h5Zm2-1v1h6V3H9Zm6.5 15L19 14.5l-1.41-1.41L15 15.67l-1.59-1.58L12 15.5 15.5 18Z" />
                                         </svg>
                                         <span className="nav-text">Vendas</span>
                                     </NavLink>
@@ -593,8 +589,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 window.location.pathname.includes("/finance") ? "active" : ""
                                             }`}
                                         >
-                                            <svg className="nav-icon icon-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                            <svg className="nav-icon icon-hover" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4Z"/>
                                             </svg>
                                             <span className="nav-text">Financeiro</span>
                                         </NavLink>
@@ -609,40 +605,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 window.location.pathname.includes("/production") ? "active" : ""
                                             }`}
                                         >
-                                            <svg className="nav-icon icon-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 7.172V5L8 4z" />
+                                            <svg className="nav-icon icon-hover" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z"/>
                                             </svg>
                                             <span className="nav-text">Produção</span>
                                         </NavLink>
                                     )}
-
-                                    {(user.role === "admin" ||
-                                        user.role === "financeiro") && (
-                                        <>
-                                            <NavLink
-                                                href={route("admin.dashboard")}
-                                                active={window.location.pathname === "/admin/dashboard"}
-                                                className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                    window.location.pathname === "/admin/dashboard"
-                                                        ? "active"
-                                                        : ""
-                                                }`}
-                                            >
-                                                <svg
-                                                    className="nav-icon icon-hover"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                                                    />
-                                                </svg>
-                                                <span className="nav-text">Admin</span>
-                                            </NavLink>
 
                                     {/* Manager Dashboard */}
                                     {(user.role === "manager" || user.role === "admin") && (
@@ -650,243 +618,144 @@ export default function AuthenticatedLayout({ header, children }) {
                                             href={route("manager.dashboard")}
                                             active={window.location.pathname.includes("/manager")}
                                             className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                window.location.pathname.includes("/manager")
-                                                    ? "active"
-                                                    : ""
+                                                window.location.pathname.includes("/manager") ? "active" : ""
                                             }`}
                                         >
-                                            <svg
-                                                className="nav-icon icon-hover"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                                                />
+                                            <svg className="nav-icon icon-hover" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+                                                <path d="M18 11h-4v2h4v-2zm0 4h-4v2h4v-2z"/>
                                             </svg>
                                             <span className="nav-text">Gerência</span>
                                         </NavLink>
                                     )}
 
-                                            <NavLink
+                                    {/* Admin Dropdown Menu */}
+                                    {(user.role === "admin" || user.role === "financeiro") && (
+                                        <DropdownMenu
+                                            trigger={
+                                                <>
+                                                    <svg className="nav-icon icon-hover" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Z"/>
+                                                        <path d="M10 11l2 2 4-4" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                    <span className="nav-text">Admin</span>
+                                                    <svg className="nav-icon ml-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                </>
+                                            }
+                                        >
+                                            <Link
+                                                href={route("admin.dashboard")}
+                                                className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
+                                            >
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M13 9V3h8v6h-8ZM3 13V3h8v10H3Zm10 8V11h8v10h-8ZM3 21v-6h8v6H3Z" />
+                                                </svg>
+                                                Dashboard Admin
+                                            </Link>
+                                            <Link
                                                 href={route("admin.users.index")}
-                                                active={window.location.pathname === "/admin/users"}
-                                                className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                    window.location.pathname === "/admin/users"
-                                                        ? "active"
-                                                        : ""
-                                                }`}
+                                                className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                             >
-                                                <svg
-                                                    className="nav-icon icon-hover"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M19 7.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                                                    />
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7Z"/>
                                                 </svg>
-                                                <span className="nav-text">👥 Usuários</span>
-                                            </NavLink>
-
-                                            <NavLink
-                                                href={route(
-                                                    "admin.sales.index"
-                                                )}
-                                                active={window.location.pathname.includes("/admin/sales")}
-                                                className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                    window.location.pathname.includes("/admin/sales")
-                                                        ? "active"
-                                                        : ""
-                                                }`}
+                                                Usuários
+                                            </Link>
+                                            <Link
+                                                href={route("admin.sales.index")}
+                                                className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                             >
-                                                <svg
-                                                    className="nav-icon icon-hover"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                    />
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4Z"/>
                                                 </svg>
-                                                <span className="nav-text">Financeiro</span>
-                                            </NavLink>
-
-                                            <NavLink
+                                                Painel Financeiro
+                                            </Link>
+                                            <Link
                                                 href="/admin/embroidery"
-                                                active={window.location.pathname.includes('/admin/embroidery')}
-                                                className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                    window.location.pathname.includes('/admin/embroidery')
-                                                        ? "active"
-                                                        : ""
-                                                }`}
+                                                className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                             >
-                                                <svg
-                                                    className="nav-icon icon-hover"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
-                                                    />
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M9.5 16a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM9.5 4a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Z"/>
+                                                    <path d="M6.5 9.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z"/>
                                                 </svg>
-                                                <span className="nav-text">Bordados</span>
-                                            </NavLink>
-
-                                            {/* Materials Management Navigation */}
-                                            {canViewMaterials() && (
-                                                <NavLink
-                                                    href={route("admin.materials.index")}
-                                                    active={window.location.pathname.includes('/admin/materials')}
-                                                    className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                        window.location.pathname.includes('/admin/materials')
-                                                            ? "active"
-                                                            : ""
-                                                    }`}
+                                                Bordados
+                                            </Link>
+                                            {user.role === 'admin' && (
+                                                <Link
+                                                    href={route("admin.permissions.index")}
+                                                    className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                                 >
-                                                    <svg
-                                                        className="nav-icon icon-hover"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                                                        />
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Z"/>
+                                                    </svg>
+                                                    Permissões
+                                                </Link>
+                                            )}
+                                            {['admin', 'manager'].includes(user.role) && (
+                                                <Link
+                                                    href={route("admin.reports.index")}
+                                                    className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
+                                                >
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M7 18h2V6H7v12Zm4 0h2v-6h-2v6Zm4 0h2V2h-2v16Z"/>
+                                                    </svg>
+                                                    Relatórios
+                                                </Link>
+                                            )}
+                                        </DropdownMenu>
+                                    )}
+
+                                    {/* Materials Management Dropdown */}
+                                    {canViewMaterials() && (
+                                        <DropdownMenu
+                                            trigger={
+                                                <>
+                                                    <svg className="nav-icon icon-hover" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M12 2 2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5Z"/>
+                                                        <path d="m8 10 4 4 4-4" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                                                     </svg>
                                                     <span className="nav-text">Materiais</span>
-                                                </NavLink>
-                                            )}
-
+                                                    <svg className="nav-icon ml-1 h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                </>
+                                            }
+                                        >
+                                            <Link
+                                                href={route("admin.materials.index")}
+                                                className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
+                                            >
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M12 2 2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5Z"/>
+                                                </svg>
+                                                Gerenciar Materiais
+                                            </Link>
                                             {canViewSuppliers() && (
-                                                <NavLink
+                                                <Link
                                                     href={route("admin.suppliers.index")}
-                                                    active={window.location.pathname.includes('/admin/suppliers')}
-                                                    className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                        window.location.pathname.includes('/admin/suppliers')
-                                                            ? "active"
-                                                            : ""
-                                                    }`}
+                                                    className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                                 >
-                                                    <svg
-                                                        className="nav-icon icon-hover"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                                                        />
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
                                                     </svg>
-                                                    <span className="nav-text">Fornecedores</span>
-                                                </NavLink>
+                                                    Fornecedores
+                                                </Link>
                                             )}
-
                                             {canViewInventory() && (
-                                                <NavLink
+                                                <Link
                                                     href={route("admin.inventory.index")}
-                                                    active={window.location.pathname.includes('/admin/inventory')}
-                                                    className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                        window.location.pathname.includes('/admin/inventory')
-                                                            ? "active"
-                                                            : ""
-                                                    }`}
+                                                    className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                                                 >
-                                                    <svg
-                                                        className="nav-icon icon-hover"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                                                        />
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"/>
+                                                        <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                                                     </svg>
-                                                    <span className="nav-text">Estoque</span>
-                                                </NavLink>
+                                                    Transações de Estoque
+                                                </Link>
                                             )}
-
-                                            {/* Permission Management Navigation - Admin Only */}
-                                            {user.role === 'admin' && (
-                                                <NavLink
-                                                    href={route("admin.permissions.index")}
-                                                    active={window.location.pathname.includes('/admin/permissions')}
-                                                    className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                        window.location.pathname.includes('/admin/permissions')
-                                                            ? "active"
-                                                            : ""
-                                                    }`}
-                                                >
-                                                    <svg
-                                                        className="nav-icon icon-hover"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                                                        />
-                                                    </svg>
-                                                    <span className="nav-text">Permissões</span>
-                                                </NavLink>
-                                            )}
-
-                                            {/* Reports Navigation - Admin and Manager */}
-                                            {['admin', 'manager'].includes(user.role) && (
-                                                <NavLink
-                                                    href={route("admin.reports.index")}
-                                                    active={window.location.pathname.includes('/admin/reports')}
-                                                    className={`nav-link flex items-center gap-0.5 lg:gap-1 xl:gap-2 ${
-                                                        window.location.pathname.includes('/admin/reports')
-                                                            ? "active"
-                                                            : ""
-                                                    }`}
-                                                >
-                                                    <svg
-                                                        className="nav-icon icon-hover"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                        />
-                                                    </svg>
-                                                    <span className="nav-text">Relatórios</span>
-                                                </NavLink>
-                                            )}
-                                        </>
+                                        </DropdownMenu>
                                     )}
                                 </div>
                             </div>
