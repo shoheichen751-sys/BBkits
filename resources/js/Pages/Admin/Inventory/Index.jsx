@@ -356,16 +356,28 @@ export default function Index({ transactions, materials, users, filters, stats }
                                     </div>
                                     <div className="flex space-x-1">
                                         {transactions.links.map((link, index) => (
-                                            <Link
-                                                key={index}
-                                                href={link.url}
-                                                className={`px-3 py-2 text-sm ${
-                                                    link.active
-                                                        ? 'bg-purple-500 text-white'
-                                                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                                                } border border-gray-300 rounded`}
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                            />
+                                            link.url ? (
+                                                <Link
+                                                    key={index}
+                                                    href={link.url}
+                                                    className={`px-3 py-2 text-sm ${
+                                                        link.active
+                                                            ? 'bg-purple-500 text-white'
+                                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                    } border border-gray-300 rounded`}
+                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                />
+                                            ) : (
+                                                <span
+                                                    key={index}
+                                                    className={`px-3 py-2 text-sm ${
+                                                        link.active
+                                                            ? 'bg-purple-500 text-white'
+                                                            : 'bg-gray-300 text-gray-500'
+                                                    } border border-gray-300 rounded cursor-not-allowed`}
+                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                />
+                                            )
                                         ))}
                                     </div>
                                 </div>
