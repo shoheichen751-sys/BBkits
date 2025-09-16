@@ -17,6 +17,11 @@ export default function SimpleIndex({ materials, filters, stats }) {
     const canManageMaterials = () => {
         return ['admin', 'manager'].includes(user.role);
     };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        router.get('/admin/materials', { search, status }, { preserveState: true });
+    };
     return (
         <AuthenticatedLayout
             header={
@@ -31,12 +36,15 @@ export default function SimpleIndex({ materials, filters, stats }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white shadow rounded-lg p-6">
-                        <h3 className="text-lg font-medium mb-4">Step 3: useState & Permission Test</h3>
-                        <p>✅ AuthenticatedLayout works</p>
-                        <p>✅ useState variables: search='{search}', status='{status}'</p>
-                        <p>✅ Permission functions work</p>
-                        <p>✅ canEditMaterials(): {canEditMaterials() ? 'YES' : 'NO'}</p>
-                        <p>✅ canManageMaterials(): {canManageMaterials() ? 'YES' : 'NO'}</p>
+                        <h3 className="text-lg font-medium mb-4">Step 4: Event Handler Test</h3>
+                        <p>✅ handleSearch function defined</p>
+                        <p>✅ router.get with hardcoded URL</p>
+                        <button
+                            onClick={handleSearch}
+                            className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
+                        >
+                            🧪 Test handleSearch (router.get)
+                        </button>
                         <p>Materials count: {materials?.data?.length || 0}</p>
                         <p>Stats total: {stats?.total || 0}</p>
                         <p>User role: {user?.role || 'unknown'}</p>
