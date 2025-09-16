@@ -299,7 +299,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     border-radius: 20px;
                     box-shadow: var(--shadow-hover);
                     overflow: hidden;
-                    margin-top: 8px;
+                    margin-top: 2px;
                 }
 
                 .dropdown-header {

@@ -18,7 +18,7 @@ export default function Show({ material, transactions }) {
     const handleStockAdjustment = (e) => {
         e.preventDefault();
 
-        post(route('admin.materials.adjust-stock', material.id), {
+        post(`/admin/materials/${material.id}/adjust-stock`, {
             onSuccess: () => {
                 toast.success('Estoque ajustado com sucesso!');
                 reset();
@@ -82,7 +82,7 @@ export default function Show({ material, transactions }) {
                         )}
                         {canCreateTransactions() && (
                             <Link
-                                href={route('admin.inventory.create', { material_id: material.id })}
+                                href={`/admin/inventory/create?material_id=${material.id}`}
                                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
                                 Nova Transação
@@ -90,14 +90,14 @@ export default function Show({ material, transactions }) {
                         )}
                         {canEditMaterials() && (
                             <Link
-                                href={route('admin.materials.edit', material.id)}
+                                href={`/admin/materials/${material.id}/edit`}
                                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
                                 Editar Material
                             </Link>
                         )}
                         <Link
-                            href={route('admin.materials.index')}
+                            href="/admin/materials"
                             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
                         >
                             Voltar
@@ -170,7 +170,7 @@ export default function Show({ material, transactions }) {
                                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                         {material.supplier ? (
                                             <Link
-                                                href={route('admin.suppliers.show', material.supplier.id)}
+                                                href={`/admin/suppliers/${material.supplier.id}`}
                                                 className="text-purple-600 hover:text-purple-900"
                                             >
                                                 {material.supplier.name}
@@ -186,7 +186,7 @@ export default function Show({ material, transactions }) {
                                         <dt className="text-sm font-medium text-gray-500">Fornecedor Secundário</dt>
                                         <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                             <Link
-                                                href={route('admin.suppliers.show', material.secondary_supplier.id)}
+                                                href={`/admin/suppliers/${material.secondary_supplier.id}`}
                                                 className="text-purple-600 hover:text-purple-900"
                                             >
                                                 {material.secondary_supplier.name}
@@ -356,7 +356,7 @@ export default function Show({ material, transactions }) {
                                     </p>
                                 </div>
                                 <Link
-                                    href={route('admin.inventory.index', { material_id: material.id })}
+                                    href={`/admin/inventory?material_id=${material.id}`}
                                     className="text-purple-600 hover:text-purple-900 text-sm font-medium"
                                 >
                                     Ver Todas →
@@ -416,7 +416,7 @@ export default function Show({ material, transactions }) {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <Link
-                                                        href={route('admin.inventory.show', transaction.id)}
+                                                        href={`/admin/inventory/${transaction.id}`}
                                                         className="text-purple-600 hover:text-purple-900"
                                                     >
                                                         Ver
