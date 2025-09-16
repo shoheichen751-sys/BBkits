@@ -36,9 +36,23 @@ export default function SimpleIndex({ materials, filters, stats }) {
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white shadow rounded-lg p-6">
-                        <h3 className="text-lg font-medium mb-4">Step 4: Event Handler Test</h3>
-                        <p>✅ handleSearch function defined</p>
-                        <p>✅ router.get with hardcoded URL</p>
+                        <h3 className="text-lg font-medium mb-4">Step 5: Data Mapping Test</h3>
+                        <p>✅ Testing materials.data.map() iteration</p>
+
+                        <div className="mb-4">
+                            <h4 className="font-medium mb-2">Materials List:</h4>
+                            {materials.data.map((material) => (
+                                <div key={material.id} className="border p-2 mb-2 rounded">
+                                    <p><strong>{material.name}</strong></p>
+                                    <p>Ref: {material.reference}</p>
+                                    <p>Stock: {material.current_stock} {material.unit}</p>
+                                    <Link href={`/admin/materials/${material.id}`} className="text-blue-500">
+                                        View Details
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
+
                         <button
                             onClick={handleSearch}
                             className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
@@ -46,8 +60,6 @@ export default function SimpleIndex({ materials, filters, stats }) {
                             🧪 Test handleSearch (router.get)
                         </button>
                         <p>Materials count: {materials?.data?.length || 0}</p>
-                        <p>Stats total: {stats?.total || 0}</p>
-                        <p>User role: {user?.role || 'unknown'}</p>
                     </div>
                 </div>
             </div>
