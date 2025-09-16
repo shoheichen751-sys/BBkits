@@ -65,7 +65,7 @@ class MaterialsController extends Controller
         $categories = MaterialCategory::active()->ordered()->get(['id', 'name']);
         $suppliers = Supplier::orderBy('name')->get(['id', 'name']);
 
-        return Inertia::render('Admin/Materials/Index', [
+        return Inertia::render('Admin/Materials/SimpleIndex', [
             'materials' => $materials,
             'categories' => $categories,
             'suppliers' => $suppliers,
