@@ -53,6 +53,27 @@ export default function SimpleIndex({ materials, filters, stats }) {
                             ))}
                         </div>
 
+                        <h4 className="font-medium mb-2">Step 6: Pagination Test</h4>
+                        {materials.links && (
+                            <div className="mb-4 p-4 border rounded">
+                                <p className="mb-2">✅ Testing materials.links pagination</p>
+                                <div className="flex space-x-1">
+                                    {materials.links.map((link, index) => (
+                                        <Link
+                                            key={index}
+                                            href={link.url}
+                                            className={`px-3 py-2 text-sm ${
+                                                link.active
+                                                    ? 'bg-purple-500 text-white'
+                                                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                                            } border border-gray-300 rounded`}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <button
                             onClick={handleSearch}
                             className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
