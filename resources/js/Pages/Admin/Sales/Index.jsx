@@ -77,7 +77,7 @@ export default function Index({ sales }) {
     };
 
     const handleApprove = (sale) => {
-        post(route('admin.sales.approve', sale.id), {
+        post(`/admin/sales/${sale.id}/approve`, {
             onSuccess: () => {
                 toast.success('Venda aprovada com sucesso! 🎉');
             },
@@ -94,7 +94,7 @@ export default function Index({ sales }) {
 
     const submitRejection = (e) => {
         e.preventDefault();
-        post(route('admin.sales.reject', selectedSale.id), {
+        post(`/admin/sales/${selectedSale.id}/reject`, {
             onSuccess: () => {
                 toast.success('Venda recusada com sucesso.');
                 setShowRejectModal(false);
@@ -682,7 +682,7 @@ export default function Index({ sales }) {
                                                                 <td className="px-6 py-4 text-sm font-medium">
                                                                     <div className="flex flex-wrap gap-1">
                                                                         <Link 
-                                                                            href={route('sales.show', sale.id)}
+                                                                            href={`/sales/${sale.id}`}
                                                                             className="action-btn action-btn-view"
                                                                         >
                                                                             <i className="fas fa-eye mr-1"></i>

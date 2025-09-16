@@ -740,24 +740,54 @@ class SaleController extends Controller
 
     public function cancel(Request $request, Sale $sale)
     {
-        // Any authenticated user can request cancellation, but admin password is required for authorization
-        // Note: We don't use $this->authorize() here because authorization is done via admin password check
+        // Explicitly authorize using the 'cancel' policy method
+        $this->authorize('cancel', $sale);
+
+        // Simple test - always log when method is called
+        \Log::emergency('CANCEL METHOD CALLED - Sale ID: ' . $sale->id . ' - User: ' . auth()->user()->email);
 
         $validated = $request->validate([
             'admin_password' => 'required|string',
             'explanation' => 'required|string|min:10|max:1000',
         ]);
 
+        // Debug: Log the password attempt
+        Log::info('Cancel attempt', [
+            'sale_id' => $sale->id,
+            'password_length' => strlen($validated['admin_password']),
+            'explanation_length' => strlen($validated['explanation']),
+            'user_id' => auth()->id()
+        ]);
+
         // Verify admin password against any admin user (not just current user)
-        $isValidAdminPassword = \App\Models\User::where('role', 'admin')
-            ->get()
-            ->contains(function ($admin) use ($validated) {
-                return Hash::check($validated['admin_password'], $admin->password);
-            });
-            
+        $adminUsers = \App\Models\User::where('role', 'admin')->get();
+
+        Log::info('Admin users found', [
+            'count' => $adminUsers->count(),
+            'admins' => $adminUsers->pluck('email')->toArray()
+        ]);
+
+        $isValidAdminPassword = $adminUsers->contains(function ($admin) use ($validated) {
+            $isValid = Hash::check($validated['admin_password'], $admin->password);
+            Log::info('Password check', [
+                'admin_email' => $admin->email,
+                'password_valid' => $isValid
+            ]);
+            return $isValid;
+        });
+
         if (!$isValidAdminPassword) {
+            Log::warning('Invalid admin password attempt', [
+                'sale_id' => $sale->id,
+                'user_id' => auth()->id()
+            ]);
             return back()->withErrors(['admin_password' => 'Senha do administrador incorreta.']);
         }
+
+        Log::info('Admin password verified, proceeding with deletion', [
+            'sale_id' => $sale->id,
+            'user_id' => auth()->id()
+        ]);
 
         try {
             DB::transaction(function () use ($sale, $validated) {
@@ -765,8 +795,17 @@ class SaleController extends Controller
                 $originalYear = $sale->payment_date ? $sale->payment_date->year : null;
                 $saleUser = $sale->user; // Store user reference before deletion
 
+                Log::info('About to delete sale', [
+                    'sale_id' => $sale->id,
+                    'client_name' => $sale->client_name
+                ]);
+
                 // Delete the sale record completely
                 $sale->delete();
+
+                Log::info('Sale deleted successfully', [
+                    'sale_id' => $sale->id
+                ]);
 
                 // Recalculate commissions for the affected month after deletion
                 if ($originalMonth && $originalYear && $saleUser) {
@@ -777,6 +816,10 @@ class SaleController extends Controller
                     );
                 }
             });
+
+            Log::info('Sale cancellation completed successfully', [
+                'sale_id' => $sale->id
+            ]);
 
             return back()->with('message', 'Venda cancelada com sucesso.');
 

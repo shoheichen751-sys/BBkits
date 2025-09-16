@@ -19,6 +19,13 @@ export default function Index({ sales, auth }) {
 
     const handleCancelConfirm = ({ password, explanation }) => {
         if (saleToCancel) {
+            console.log('Attempting to cancel sale:', {
+                saleId: saleToCancel.id,
+                url: `/sales/${saleToCancel.id}/cancel`,
+                passwordLength: password ? password.length : 0,
+                explanationLength: explanation ? explanation.length : 0
+            });
+
             post(`/sales/${saleToCancel.id}/cancel`, {
                 admin_password: password,
                 explanation: explanation
@@ -29,6 +36,10 @@ export default function Index({ sales, auth }) {
                     setSaleToCancel(null);
                 },
                 onError: (errors) => {
+                    console.error('Cancel request failed:', errors);
+                    console.error('Response status:', errors.response?.status);
+                    console.error('Response headers:', errors.response?.headers);
+
                     if (errors.admin_password) {
                         toast.error('Senha do administrador incorreta.');
                     } else if (errors.explanation) {

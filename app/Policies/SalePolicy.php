@@ -37,6 +37,12 @@ class SalePolicy
         return $user->isAdmin();
     }
 
+    public function cancel(User $user, Sale $sale): bool
+    {
+        // Any authenticated user can request cancellation (admin password will be verified in controller)
+        return true;
+    }
+
     public function approve(User $user): bool
     {
         return $user->isFinanceiro() || $user->isAdmin();
