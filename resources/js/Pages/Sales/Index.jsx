@@ -19,7 +19,7 @@ export default function Index({ sales, auth }) {
 
     const handleCancelConfirm = ({ password, explanation }) => {
         if (saleToCancel) {
-            post(route('sales.cancel', saleToCancel.id), {
+            post(`/sales/${saleToCancel.id}/cancel`, {
                 admin_password: password,
                 explanation: explanation
             }, {
@@ -332,7 +332,7 @@ export default function Index({ sales, auth }) {
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                <Link href={route('sales.create-expanded')}>
+                                <Link href="/sales/create-expanded">
                                     <button className="btn-gradient text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition duration-300">
                                         <i className="fas fa-plus-circle mr-2"></i>
                                         Nova Venda Completa
@@ -361,7 +361,7 @@ export default function Index({ sales, auth }) {
                                                 Cada grande vendedora começou com uma única venda! 💪
                                             </p>
                                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                                <Link href={route('sales.create-expanded')}>
+                                                <Link href="/sales/create-expanded">
                                                     <button className="btn-gradient text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl">
                                                         <i className="fas fa-rocket mr-3"></i>
                                                         Registrar Primeira Venda
@@ -435,14 +435,14 @@ export default function Index({ sales, auth }) {
                                                         render: (sale) => (
                                                             <div className="flex gap-2">
                                                                 <Link 
-                                                                    href={route('sales.show', sale.id)}
+                                                                    href={`/sales/${sale.id}`}
                                                                     className="action-btn action-btn-view"
                                                                 >
                                                                     <i className="fas fa-eye mr-1"></i>
                                                                     Ver
                                                                 </Link>
                                                                 <Link 
-                                                                    href={route('payments.index', sale.id)}
+                                                                    href={`/sales/${sale.id}/payments`}
                                                                     className="action-btn action-btn-payment"
                                                                     title="Gerenciar Pagamentos"
                                                                 >
@@ -465,7 +465,7 @@ export default function Index({ sales, auth }) {
                                                                 )}
                                                                 {sale.status === 'pendente' && (
                                                                     <Link 
-                                                                        href={route('sales.edit', sale.id)}
+                                                                        href={`/sales/${sale.id}/edit`}
                                                                         className="action-btn action-btn-edit"
                                                                     >
                                                                         <i className="fas fa-edit mr-1"></i>
