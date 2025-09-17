@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -77,11 +77,23 @@ export default function Index({ sales }) {
     };
 
     const handleApprove = (sale) => {
-        post(`/admin/sales/${sale.id}/approve`, {
+        console.log('handleApprove called with sale:', sale);
+        console.log('sale.id:', sale.id);
+
+        if (!sale.id) {
+            toast.error('Erro: ID da venda não encontrado');
+            return;
+        }
+
+        const url = `/admin/sales/${sale.id}/approve`;
+        console.log('Approving sale with URL:', url);
+
+        router.post(url, {}, {
             onSuccess: () => {
                 toast.success('Venda aprovada com sucesso! 🎉');
             },
-            onError: () => {
+            onError: (errors) => {
+                console.error('Approval error:', errors);
                 toast.error('Erro ao aprovar venda.');
             }
         });
