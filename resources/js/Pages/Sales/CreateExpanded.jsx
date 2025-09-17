@@ -816,14 +816,14 @@ export default function CreateExpanded() {
                                 </div>
                             </div>
 
-                            {/* Order Details Section */}
-                            <div className="bg-white rounded-xl shadow-md p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                                    <span className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">📋</span>
-                                    Resumo do Pedido
-                                </h3>
-                                
-                                {data.products && data.products.length > 0 ? (
+                            {/* Order Details Section - Only show when products are selected */}
+                            {data.products && data.products.length > 0 && (
+                                <div className="bg-white rounded-xl shadow-md p-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                        <span className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">📋</span>
+                                        Resumo do Pedido
+                                    </h3>
+
                                     <div className="space-y-4">
                                         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                                             <h4 className="font-medium text-green-800 mb-4 flex items-center gap-2">
@@ -944,16 +944,8 @@ export default function CreateExpanded() {
                                             </div>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="text-center py-8 text-gray-500">
-                                        <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5M6 18a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4z" />
-                                        </svg>
-                                        <p className="text-lg font-medium">Nenhum produto no carrinho</p>
-                                        <p className="text-sm">Adicione produtos acima para ver o resumo do pedido</p>
-                                    </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             {/* Product Specifications Section */}
                             <div className="bg-white rounded-xl shadow-md p-6">
