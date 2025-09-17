@@ -21,7 +21,8 @@
       "Bash(sudo apt-get install:*)",
       "Bash(sed:*)",
       "WebFetch(domain:127.0.0.1)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Read(//tmp/**)"
     ],
     "deny": [],
     "additionalDirectories": [

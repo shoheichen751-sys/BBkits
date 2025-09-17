@@ -133,7 +133,7 @@ export default function KanbanBoard({ sales = [], users = [] }) {
         setLoading(true);
         
         try {
-            router.patch(route('sales.update-status', saleId), {
+            router.patch(`/sales/${saleId}/status`, {
                 order_status: newStatus
             }, {
                 preserveState: true,
@@ -249,7 +249,7 @@ export default function KanbanBoard({ sales = [], users = [] }) {
 
                 <div className="mt-3 flex justify-between items-center">
                     <button
-                        onClick={() => router.visit(route('sales.show', sale.id))}
+                        onClick={() => router.visit(`/sales/${sale.id}`)}
                         className="text-xs text-blue-600 hover:text-blue-800"
                     >
                         Ver detalhes →
@@ -277,7 +277,7 @@ export default function KanbanBoard({ sales = [], users = [] }) {
                             🔄 Atualizar
                         </button>
                         <button
-                            onClick={() => router.visit(route('sales.index'))}
+                            onClick={() => router.visit('/sales')}
                             className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                         >
                             📋 Lista

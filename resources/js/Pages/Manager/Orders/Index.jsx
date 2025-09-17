@@ -11,7 +11,7 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('manager.orders.index'), {
+        router.get('/manager/orders', {
             search: search,
             status: selectedStatus
         }, {
@@ -21,7 +21,7 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
 
     const handleStatusFilter = (status) => {
         setSelectedStatus(status);
-        router.get(route('manager.orders.index'), {
+        router.get('/manager/orders', {
             search: search,
             status: status
         }, {
@@ -35,7 +35,7 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
         }
 
         setProcessing(true);
-        router.post(route('manager.orders.send-to-production', orderId), {}, {
+        router.post(`/manager/orders/${orderId}/send-to-production`, {}, {
             onSuccess: () => {
                 toast.success('Pedido enviado para produção!');
                 setProcessing(false);
@@ -92,7 +92,7 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
                             <p className="text-gray-600 text-sm">Visualizar, imprimir e enviar pedidos para produção</p>
                         </div>
                         <Link
-                            href={route('manager.dashboard')}
+                            href="/manager/dashboard"
                             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
                         >
                             ← Dashboard
@@ -275,7 +275,7 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
                                                         <div className="flex space-x-2">
                                                             {order.can_print ? (
                                                                 <Link
-                                                                    href={route('manager.orders.print', order.id)}
+                                                                    href={`/manager/orders/${order.id}/print`}
                                                                     className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs transition-colors"
                                                                     target="_blank"
                                                                 >

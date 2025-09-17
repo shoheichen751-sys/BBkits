@@ -34,7 +34,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
     };
 
     const handleApprove = () => {
-        post(route('finance.orders.approve', selectedOrder.id), {
+        post(`/finance/orders/${selectedOrder.id}/approve`, {
             onSuccess: () => {
                 toast.success('Pedido aprovado com sucesso!');
                 setShowModal(false);
@@ -50,7 +50,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
         }
         
         setData('action', 'reject');
-        post(route('finance.orders.reject', selectedOrder.id), {
+        post(`/finance/orders/${selectedOrder.id}/reject`, {
             onSuccess: () => {
                 toast.success('Pedido rejeitado');
                 setShowModal(false);
@@ -150,7 +150,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                             <div className="border-b border-gray-200">
                                 <nav className="-mb-px flex space-x-8 px-6">
                                     <Link
-                                        href={route('finance.orders.index')}
+                                        href="/finance/orders"
                                         className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                             !statusFilter || statusFilter === 'all' 
                                                 ? 'border-green-500 text-green-600' 
@@ -160,7 +160,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         📋 Todos ({orders.length})
                                     </Link>
                                     <Link
-                                        href={route('finance.orders.index', { status: 'pending_payment' })}
+                                        href="/finance/orders?status=pending_payment"
                                         className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                             statusFilter === 'pending_payment'
                                                 ? 'border-yellow-500 text-yellow-600' 
@@ -170,7 +170,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         ⏳ Pagamento Inicial ({pendingPaymentOrders.length})
                                     </Link>
                                     <Link
-                                        href={route('finance.orders.index', { status: 'pending_final_payment' })}
+                                        href="/finance/orders?status=pending_final_payment"
                                         className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                             statusFilter === 'pending_final_payment'
                                                 ? 'border-orange-500 text-orange-600' 

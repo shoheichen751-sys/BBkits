@@ -17,7 +17,7 @@ export default function Register() {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route("register"), {
+        post('/register', {
             onFinish: () => reset("password", "password_confirmation"),
             onSuccess: () => {
                 toast.success("Conta criada com sucesso!");
@@ -220,7 +220,7 @@ export default function Register() {
                                 <div className="text-center">
                                     <span className="text-sm text-gray-600">Já possui uma conta? </span>
                                     <Link
-                                        href={route('login')}
+                                        href="/login"
                                         className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200"
                                     >
                                         Fazer Login

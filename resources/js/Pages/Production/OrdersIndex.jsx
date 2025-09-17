@@ -31,7 +31,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
             return;
         }
         
-        post(route('production.orders.start', order.id), {
+        post(`/production/orders/${order.id}/start`, {
             onSuccess: () => {
                 toast.success('Produção iniciada com sucesso!');
                 setShowModal(false);
@@ -69,7 +69,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
             return;
         }
         
-        post(route('production.orders.upload-photo', selectedOrder.id), {
+        post(`/production/orders/${selectedOrder.id}/upload-photo`, {
             onSuccess: () => {
                 toast.success('Foto enviada para aprovação!');
                 setShowModal(false);
@@ -78,7 +78,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
     };
 
     const handleGenerateShipping = () => {
-        post(route('production.orders.generate-shipping', selectedOrder.id), {
+        post(`/production/orders/${selectedOrder.id}/generate-shipping`, {
             onSuccess: () => {
                 toast.success('Etiqueta de envio gerada!');
                 setShowModal(false);
@@ -223,7 +223,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                             <div className="border-b border-gray-200">
                                 <nav className="-mb-px flex space-x-8 px-6">
                                     <Link
-                                        href={route('production.orders.index')}
+                                        href="/production/orders"
                                         className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                             !statusFilter || statusFilter === 'all' 
                                                 ? 'border-blue-500 text-blue-600' 
@@ -233,7 +233,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         Todos ({orders.length})
                                     </Link>
                                     <Link
-                                        href={route('production.orders.index', { status: 'payment_approved' })}
+                                        href="/production/orders?status=payment_approved"
                                         className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                             statusFilter === 'payment_approved'
                                                 ? 'border-green-500 text-green-600' 
@@ -243,7 +243,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         Pronto p/ Produção ({statusCounts.payment_approved})
                                     </Link>
                                     <Link
-                                        href={route('production.orders.index', { status: 'in_production' })}
+                                        href="/production/orders?status=in_production"
                                         className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                             statusFilter === 'in_production'
                                                 ? 'border-blue-500 text-blue-600' 
@@ -253,7 +253,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         Em Produção ({statusCounts.in_production})
                                     </Link>
                                     <Link
-                                        href={route('production.orders.index', { status: 'ready_for_shipping' })}
+                                        href="/production/orders?status=ready_for_shipping"
                                         className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                             statusFilter === 'ready_for_shipping'
                                                 ? 'border-teal-500 text-teal-600' 

@@ -24,7 +24,7 @@ export default function Login({ status, canResetPassword }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('login'), {
+        post('/login', {
             onFinish: () => reset('password'),
             onSuccess: () => {
                 toast.success('Login realizado com sucesso!');
@@ -184,7 +184,7 @@ export default function Login({ status, canResetPassword }) {
 
                                     {canResetPassword && (
                                         <Link
-                                            href={route('password.request')}
+                                            href="/forgot-password"
                                             className="text-sm text-orange-600 hover:text-orange-700 transition-colors duration-200"
                                         >
                                             Esqueceu a senha?
@@ -216,7 +216,7 @@ export default function Login({ status, canResetPassword }) {
                                 <div className="text-center">
                                     <span className="text-sm text-gray-600">Ainda não tem uma conta? </span>
                                     <Link
-                                        href={route('register')}
+                                        href="/register"
                                         className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200"
                                     >
                                         Criar Conta

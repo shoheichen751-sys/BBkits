@@ -46,7 +46,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
             return;
         }
         
-        post(route('sales.client.update-address', { token: sale.unique_token }), {
+        post(`/pedido/${sale.unique_token}/update-address`, {
             onSuccess: () => {
                 toast.success('Endereço atualizado com sucesso!');
                 setShowAddressForm(false);
@@ -56,7 +56,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
 
     const submitPayment = (e) => {
         e.preventDefault();
-        post(route('sales.client.upload-payment', { token: sale.unique_token }), {
+        post(`/pedido/${sale.unique_token}/upload-payment`, {
             onSuccess: () => {
                 toast.success('Comprovante enviado com sucesso!');
                 setShowPaymentForm(false);
@@ -65,7 +65,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
     };
 
     const approvePhoto = () => {
-        post(route('sales.client.approve-photo', { token: sale.unique_token }), {
+        post(`/pedido/${sale.unique_token}/approve-photo`, {
             data: { approved: true },
             onSuccess: () => {
                 toast.success('Foto aprovada! 🎉');
@@ -79,7 +79,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
             return;
         }
         
-        post(route('sales.client.approve-photo', { token: sale.unique_token }), {
+        post(`/pedido/${sale.unique_token}/approve-photo`, {
             data: { approved: false, reason: data.photo_rejection_reason },
             onSuccess: () => {
                 toast.success('Solicitação de ajuste enviada');
