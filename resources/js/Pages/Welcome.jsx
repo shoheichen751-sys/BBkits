@@ -218,7 +218,7 @@ export default function Welcome({ auth }) {
                         <div className="flex items-center space-x-4">
                             {auth.user ? (
                                 <Link
-                                    href={route("dashboard")}
+                                    href="/dashboard"
                                     className="btn-gradient text-white px-8 py-3 rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transition duration-300 uppercase tracking-wide"
                                 >
                                     Acessar Sistema
@@ -226,13 +226,13 @@ export default function Welcome({ auth }) {
                             ) : (
                                 <div className="flex items-center space-x-4">
                                     <Link
-                                        href={route("login")}
+                                        href="/login"
                                         className="text-white/90 hover:text-white px-6 py-3 rounded-full font-medium transition duration-300 backdrop-blur-sm hover:bg-white/10 border border-white/20 hover:border-white/40"
                                     >
                                         Entrar
                                     </Link>
                                     <Link
-                                        href={route("register")}
+                                        href="/register"
                                         className="bg-white/95 text-pink-600 hover:bg-white hover:text-pink-700 px-8 py-3 rounded-full font-semibold transition duration-300 shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm"
                                     >
                                         Cadastrar
@@ -260,14 +260,14 @@ export default function Welcome({ auth }) {
                         {!auth.user && (
                             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-20">
                                 <Link
-                                    href={route("login")}
+                                    href="/login"
                                     className="bg-white/95 text-pink-600 hover:text-pink-700 px-10 py-4 rounded-full text-xl font-bold transition duration-300 shadow-xl hover:shadow-2xl hover:scale-105 hover:bg-white backdrop-blur-sm border border-white/20"
                                 >
                                     Fazer Login
                                     <i className="fas fa-arrow-right ml-3"></i>
                                 </Link>
                                 <Link
-                                    href={route("register")}
+                                    href="/register"
                                     className="btn-gradient text-white px-10 py-4 rounded-full text-xl font-bold shadow-xl hover:shadow-2xl uppercase tracking-wide"
                                 >
                                     Quero ser uma vendedora BBkits

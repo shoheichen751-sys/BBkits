@@ -129,7 +129,7 @@ export default function Index({ auth, notifications = [] }) {
                                                 <div className="mt-2 pl-11">
                                                     {notification.data.sale_id && (
                                                         <a
-                                                            href={route('sales.show', notification.data.sale_id)}
+                                                            href={`/sales/${notification.data.sale_id}`}
                                                             className="text-xs text-pink-600 hover:text-pink-800"
                                                         >
                                                             Ver detalhes →

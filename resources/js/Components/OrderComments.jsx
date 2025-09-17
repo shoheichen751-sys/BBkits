@@ -23,7 +23,7 @@ export default function OrderComments({ sale, users = [] }) {
     const loadComments = async () => {
         try {
             setLoading(true);
-            const response = await fetch(route('order-comments.index', { sale: sale.id }));
+            const response = await fetch(`/order-comments?sale=${sale.id}`);
             const result = await response.json();
             setComments(result.data || []);
         } catch (error) {
@@ -42,8 +42,8 @@ export default function OrderComments({ sale, users = [] }) {
         e.preventDefault();
         
         const action = editingComment ? 
-            () => put(route('order-comments.update', editingComment.id)) :
-            () => post(route('order-comments.store', sale.id));
+            () => put(`/order-comments/${editingComment.id}`) :
+            () => post(`/order-comments/${sale.id}`);
         
         action({
             onSuccess: () => {
@@ -61,7 +61,7 @@ export default function OrderComments({ sale, users = [] }) {
 
     const deleteComment = (commentId) => {
         if (confirm('Tem certeza que deseja remover este comentário?')) {
-            router.delete(route('order-comments.destroy', commentId), {
+            router.delete(`/order-comments/${commentId}`, {
                 onSuccess: () => {
                     toast.success('Comentário removido!');
                     loadComments();

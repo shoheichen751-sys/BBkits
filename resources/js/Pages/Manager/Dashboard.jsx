@@ -25,7 +25,7 @@ export default function ManagerDashboard({ auth }) {
                         {/* Quick Actions */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                             <Link
-                                href={route('manager.orders.index')}
+                                href="/manager/orders"
                                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
                             >
                                 <div className="flex items-center">
@@ -47,7 +47,7 @@ export default function ManagerDashboard({ auth }) {
                             </Link>
 
                             <Link
-                                href={route('manager.orders.index', { status: 'payment_approved' })}
+                                href="/manager/orders?status=payment_approved"
                                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
                             >
                                 <div className="flex items-center">
@@ -69,7 +69,7 @@ export default function ManagerDashboard({ auth }) {
                             </Link>
 
                             <Link
-                                href={route('manager.orders.index', { status: 'ready_for_shipping' })}
+                                href="/manager/orders?status=ready_for_shipping"
                                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow group"
                             >
                                 <div className="flex items-center">
@@ -117,7 +117,7 @@ export default function ManagerDashboard({ auth }) {
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Acesso Rápido</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <Link
-                                    href={route('manager.orders.index', { status: 'pending_payment' })}
+                                    href="/manager/orders?status=pending_payment"
                                     className="text-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
                                 >
                                     <div className="text-2xl mb-2">⏳</div>
@@ -125,7 +125,7 @@ export default function ManagerDashboard({ auth }) {
                                 </Link>
 
                                 <Link
-                                    href={route('manager.orders.index', { status: 'in_production' })}
+                                    href="/manager/orders?status=in_production"
                                     className="text-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                                 >
                                     <div className="text-2xl mb-2">🏭</div>
@@ -133,7 +133,7 @@ export default function ManagerDashboard({ auth }) {
                                 </Link>
 
                                 <Link
-                                    href={route('manager.orders.index', { status: 'photo_sent' })}
+                                    href="/manager/orders?status=photo_sent"
                                     className="text-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
                                 >
                                     <div className="text-2xl mb-2">📸</div>
@@ -141,7 +141,7 @@ export default function ManagerDashboard({ auth }) {
                                 </Link>
 
                                 <Link
-                                    href={route('manager.orders.index', { status: 'shipped' })}
+                                    href="/manager/orders?status=shipped"
                                     className="text-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
                                 >
                                     <div className="text-2xl mb-2">🚚</div>

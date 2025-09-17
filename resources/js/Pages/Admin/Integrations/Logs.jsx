@@ -157,7 +157,7 @@ export default function Logs({ auth, logs, filters }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {log.order_id ? (
                                                         <Link
-                                                            href={route('sales.show', log.order_id)}
+                                                            href={`/sales/${log.order_id}`}
                                                             className="text-pink-600 hover:text-pink-800"
                                                         >
                                                             #{log.order_token || log.order_id}

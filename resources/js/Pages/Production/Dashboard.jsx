@@ -124,28 +124,28 @@ export default function Dashboard({ stats, recent_orders }) {
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
                             <div className="flex flex-wrap gap-4">
                                 <Link
-                                    href={route('production.orders.index', { status: 'payment_approved' })}
+                                    href="/production/orders?status=payment_approved"
                                     className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
                                 >
                                     <span>✅</span>
                                     Iniciar Produções
                                 </Link>
                                 <Link
-                                    href={route('production.orders.index', { status: 'in_production' })}
+                                    href="/production/orders?status=in_production"
                                     className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
                                 >
                                     <span>🏭</span>
                                     Em Produção
                                 </Link>
                                 <Link
-                                    href={route('production.orders.index', { status: 'ready_for_shipping' })}
+                                    href="/production/orders?status=ready_for_shipping"
                                     className="bg-teal-500 text-white px-6 py-3 rounded-lg hover:bg-teal-600 transition-colors flex items-center gap-2"
                                 >
                                     <span>📦</span>
                                     Gerar Envios
                                 </Link>
                                 <Link
-                                    href={route('production.orders.index')}
+                                    href="/production/orders"
                                     className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
                                 >
                                     <span>📋</span>
@@ -205,7 +205,7 @@ export default function Dashboard({ stats, recent_orders }) {
                                     Quando houver pedidos para produzir, eles aparecerão aqui.
                                 </p>
                                 <Link
-                                    href={route('production.orders.index')}
+                                    href="/production/orders"
                                     className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
                                 >
                                     Ver Pedidos

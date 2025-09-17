@@ -93,7 +93,7 @@ export default function CreateWithPreview() {
     };
 
     const handleConfirmOrder = () => {
-        post(route('sales.store'), {
+        post('/sales', {
             onSuccess: () => {
                 toast.success('🎉 Venda registrada com sucesso! Link do cliente gerado.');
             },
@@ -493,7 +493,7 @@ export default function CreateWithPreview() {
                         <div className="mt-6 flex justify-end gap-4">
                             <SecondaryButton
                                 type="button"
-                                onClick={() => router.visit(route('sales.index'))}
+                                onClick={() => router.visit('/sales')}
                             >
                                 Cancelar
                             </SecondaryButton>

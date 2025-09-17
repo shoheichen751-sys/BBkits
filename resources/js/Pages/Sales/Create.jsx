@@ -21,7 +21,7 @@ export default function Create() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('sales.store'), {
+        post('/sales', {
             onSuccess: () => {
                 toast.success('Venda registrada com sucesso! 🎉');
             },
@@ -686,7 +686,7 @@ export default function Create() {
                                     {/* Botões de Ação */}
                                     <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-100">
                                         <a
-                                            href={route('sales.index')}
+                                            href="/sales"
                                             className="btn-cancel"
                                         >
                                             <i className="fas fa-times"></i>

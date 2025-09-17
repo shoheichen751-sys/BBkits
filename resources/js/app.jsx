@@ -37,8 +37,9 @@ function route(name, params = {}, absolute = false) {
                         try {
                             const value = params[key];
                             if (value !== undefined && value !== null && value !== '') {
-                                url = url.replace(`{${key}}`, String(value));
-                                url = url.replace(`{${key}?}`, String(value));
+                                // Replace both required and optional parameters
+                                url = url.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+                                url = url.replace(new RegExp(`\\{${key}\\?\\}`, 'g'), String(value));
                             }
                         } catch (e) {
                             console.warn('Parameter replacement error for key:', key, e);
@@ -46,8 +47,19 @@ function route(name, params = {}, absolute = false) {
                     });
                 }
 
-                // Clean up optional parameters
+                // Clean up any remaining optional parameters
                 url = url.replace(/\{[^}]+\?\}/g, '');
+
+                // Remove any remaining required parameters that weren't replaced
+                // This prevents {sale} from becoming %7Bsale%7D
+                const remainingParams = url.match(/\{[^}]+\}/g);
+                if (remainingParams) {
+                    console.warn('Unreplaced parameters found in route:', name, remainingParams, 'URL:', url);
+                    // Replace with empty string or placeholder
+                    url = url.replace(/\{[^}]+\}/g, '');
+                    // Clean up double slashes
+                    url = url.replace(/\/+/g, '/');
+                }
 
                 // Ensure leading slash
                 if (!url.startsWith('/')) {

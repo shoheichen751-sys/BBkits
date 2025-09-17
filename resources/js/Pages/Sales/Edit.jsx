@@ -26,7 +26,7 @@ export default function Edit({ sale }) {
 
     const submit = (e) => {
         e.preventDefault();
-        put(route('sales.update', sale.id), {
+        put(`/sales/${sale.id}`, {
             onSuccess: () => {
                 toast.success('Venda atualizada com sucesso! 🎉');
             },
@@ -817,7 +817,7 @@ export default function Edit({ sale }) {
                                     {/* Botões de Ação */}
                                     <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-100">
                                         <a
-                                            href={route('sales.index')}
+                                            href="/sales"
                                             className="btn-cancel"
                                         >
                                             <i className="fas fa-arrow-left"></i>
