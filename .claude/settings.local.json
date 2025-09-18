@@ -22,7 +22,8 @@
       "Bash(sed:*)",
       "WebFetch(domain:127.0.0.1)",
       "Bash(sqlite3:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(composer:*)"
     ],
     "deny": [],
     "additionalDirectories": [
