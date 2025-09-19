@@ -56,8 +56,24 @@ class FinanceController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             if ($sale->order_status === 'pending_payment') {
+                // Validate minimum payment requirement (50% rule)
+                $totalOrderAmount = $sale->total_amount + ($sale->shipping_amount ?? 0);
+                $minimumRequired = $totalOrderAmount * 0.5; // 50% minimum
+                $currentPaidAmount = $sale->getTotalPaidAmount();
+
+                if ($currentPaidAmount < $minimumRequired) {
+                    DB::rollBack();
+                    return back()->withErrors([
+                        'error' => sprintf(
+                            'Pagamento insuficiente para aprovação. Mínimo de 50%% necessário: %s (Pago: %s)',
+                            'R$ ' . number_format($minimumRequired, 2, ',', '.'),
+                            'R$ ' . number_format($currentPaidAmount, 2, ',', '.')
+                        )
+                    ]);
+                }
+
                 // Initial payment approval
                 $sale->update([
                     'status' => 'aprovado', // Legacy status for commission calculation
@@ -67,29 +83,45 @@ class FinanceController extends Controller
                     'approved_by' => auth()->id(), // Legacy field
                     'approved_at' => now() // Legacy field
                 ]);
-                
+
                 // Approve all pending payments for this sale
                 $sale->payments()->where('status', 'pending')->update([
                     'status' => 'approved',
                     'approved_by' => auth()->id(),
                     'approved_at' => now(),
                 ]);
-                
+
                 // Create commission record if needed
                 $commissionService = app(\App\Services\CommissionService::class);
                 $commissionService->createCommissionForSale($sale->fresh());
                 
             } elseif ($sale->order_status === 'pending_final_payment') {
-                // Final payment approval
+                // Validate final payment completes the order
+                $totalOrderAmount = $sale->total_amount + ($sale->shipping_amount ?? 0);
+                $currentPaidAmount = $sale->getTotalPaidAmount();
+
+                if ($currentPaidAmount < $totalOrderAmount) {
+                    DB::rollBack();
+                    $remaining = $totalOrderAmount - $currentPaidAmount;
+                    return back()->withErrors([
+                        'error' => sprintf(
+                            'Pagamento final insuficiente. Ainda falta: %s para completar o pedido',
+                            'R$ ' . number_format($remaining, 2, ',', '.')
+                        )
+                    ]);
+                }
+
+                // Final payment approval - order is now fully paid
                 $sale->update([
                     'order_status' => 'ready_for_shipping',
                     'final_payment_approved_at' => now()
                 ]);
-                
-                // Update received amount with final payment
-                $finalPaymentAmount = $sale->total_amount - $sale->received_amount;
-                $sale->update([
-                    'received_amount' => $sale->total_amount
+
+                // Approve pending final payments
+                $sale->payments()->where('status', 'pending')->update([
+                    'status' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
                 ]);
             }
             

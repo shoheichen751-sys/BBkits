@@ -113,7 +113,7 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
                                     <h3 className="text-sm font-medium text-blue-800">
                                         💰 Status de Pagamento - Guia Rápido
                                     </h3>
-                                    <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-blue-700">
+                                    <div className="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-blue-700">
                                         <div className="flex items-center space-x-2">
                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 ✅ Totalmente Pago
@@ -121,16 +121,22 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
                                             <span>= 100% recebido</span>
                                         </div>
                                         <div className="flex items-center space-x-2">
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                💰 % Processado
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                🏭 Pode Produzir
                                             </span>
-                                            <span>= Parcialmente pago</span>
+                                            <span>= Mín. 50% pago</span>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                🚫 Mín. 50% p/ Produção
+                                            </span>
+                                            <span>= Insuficiente</span>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                                                 🏦 Aprovado Financeiro
                                             </span>
-                                            <span>= Pagamento confirmado pelo financeiro</span>
+                                            <span>= Confirmado pelo financeiro</span>
                                         </div>
                                     </div>
                                 </div>
@@ -236,12 +242,28 @@ export default function ManagerOrdersIndex({ auth, orders, filters, statusOption
                                                         <div className="flex items-center gap-2 mt-1">
                                                             {order.payment_status === 'fully_paid' ? (
                                                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                    ✅ Totalmente Pago
+                                                                    ✅ Totalmente Pago (100%)
                                                                 </span>
                                                             ) : order.payment_status === 'partially_paid' ? (
-                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                                    💰 {Math.round(order.payment_progress)}% Processado
-                                                                </span>
+                                                                <>
+                                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                                                        order.payment_progress >= 50
+                                                                            ? 'bg-emerald-100 text-emerald-800'
+                                                                            : 'bg-yellow-100 text-yellow-800'
+                                                                    }`}>
+                                                                        {order.payment_progress >= 50 ? '✅' : '⚠️'} {Math.round(order.payment_progress)}% Pago
+                                                                    </span>
+                                                                    {order.payment_progress >= 50 && (
+                                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                                            🏭 Pode Produzir
+                                                                        </span>
+                                                                    )}
+                                                                    {order.payment_progress < 50 && (
+                                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                            🚫 Mín. 50% p/ Produção
+                                                                        </span>
+                                                                    )}
+                                                                </>
                                                             ) : (
                                                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                                                     ❌ Aguardando Pagamento

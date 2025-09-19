@@ -38,15 +38,23 @@ class ProductionController extends Controller
             case 'photo_sent':
                 $query->where('order_status', 'photo_sent');
                 break;
+            case 'photo_approved':
+                $query->where('order_status', 'photo_approved');
+                break;
+            case 'pending_final_payment':
+                $query->where('order_status', 'pending_final_payment');
+                break;
             case 'ready_for_shipping':
                 $query->where('order_status', 'ready_for_shipping');
                 break;
             case 'all':
             default:
                 $query->whereIn('order_status', [
-                    'payment_approved', 
-                    'in_production', 
+                    'payment_approved',
+                    'in_production',
                     'photo_sent',
+                    'photo_approved',
+                    'pending_final_payment',
                     'ready_for_shipping'
                 ]);
                 break;
@@ -64,6 +72,19 @@ class ProductionController extends Controller
     {
         if ($sale->order_status !== 'payment_approved') {
             return back()->withErrors(['error' => 'Pedido não está pronto para produção']);
+        }
+
+        // Validate minimum payment requirement (50% rule)
+        if (!$sale->meetsMinimumPaymentForProduction()) {
+            $minimumRequired = $sale->getMinimumPaymentRequired();
+            $currentPaid = $sale->getTotalPaidAmount();
+            return back()->withErrors([
+                'error' => sprintf(
+                    'Pagamento insuficiente para iniciar produção. Mínimo: R$ %s (Pago: R$ %s)',
+                    number_format($minimumRequired, 2, ',', '.'),
+                    number_format($currentPaid, 2, ',', '.')
+                )
+            ]);
         }
 
         // Validate required information before starting production
@@ -212,23 +233,34 @@ class ProductionController extends Controller
         $paymentApproved = Sale::where('order_status', 'payment_approved')->count();
         $inProduction = Sale::where('order_status', 'in_production')->count();
         $photoSent = Sale::where('order_status', 'photo_sent')->count();
+        $photoApproved = Sale::where('order_status', 'photo_approved')->count();
+        $pendingFinalPayment = Sale::where('order_status', 'pending_final_payment')->count();
         $readyForShipping = Sale::where('order_status', 'ready_for_shipping')->count();
-        
+
         $myProductions = Sale::where('production_admin_id', auth()->id())
                             ->whereDate('production_started_at', '>=', now()->subDays(30))
                             ->count();
-        
+
         $recentOrders = Sale::with(['user'])
-                           ->whereIn('order_status', ['payment_approved', 'in_production', 'photo_sent', 'ready_for_shipping'])
+                           ->whereIn('order_status', [
+                               'payment_approved',
+                               'in_production',
+                               'photo_sent',
+                               'photo_approved',
+                               'pending_final_payment',
+                               'ready_for_shipping'
+                           ])
                            ->latest()
                            ->limit(10)
                            ->get();
-        
+
         return Inertia::render('Production/Dashboard', [
             'stats' => [
                 'payment_approved' => $paymentApproved,
                 'in_production' => $inProduction,
                 'photo_sent' => $photoSent,
+                'photo_approved' => $photoApproved,
+                'pending_final_payment' => $pendingFinalPayment,
                 'ready_for_shipping' => $readyForShipping,
                 'my_productions' => $myProductions
             ],

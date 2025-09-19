@@ -547,7 +547,51 @@ class Sale extends Model
 
     public function needsFinalPayment(): bool
     {
-        return $this->getRemainingAmount() > 0 && in_array($this->order_status, ['photo_approved', 'pending_final_payment']);
+        // Check if order requires final payment after photo approval
+        if (in_array($this->order_status, ['photo_approved', 'pending_final_payment'])) {
+            $totalOrderAmount = $this->total_amount + ($this->shipping_amount ?? 0);
+            $paidAmount = $this->getTotalPaidAmount();
+            $minimumForProduction = $totalOrderAmount * 0.5; // 50% minimum
+
+            // Only needs final payment if:
+            // 1. Has at least 50% paid (approved for production)
+            // 2. But not fully paid yet
+            return $paidAmount >= $minimumForProduction && $paidAmount < $totalOrderAmount;
+        }
+
+        return false;
+    }
+
+    public function meetsMinimumPaymentForProduction(): bool
+    {
+        $totalOrderAmount = $this->total_amount + ($this->shipping_amount ?? 0);
+        $minimumRequired = $totalOrderAmount * 0.5; // 50% minimum
+        $paidAmount = $this->getTotalPaidAmount();
+
+        return $paidAmount >= $minimumRequired;
+    }
+
+    public function getMinimumPaymentRequired(): float
+    {
+        $totalOrderAmount = $this->total_amount + ($this->shipping_amount ?? 0);
+        return $totalOrderAmount * 0.5; // 50% minimum
+    }
+
+    public function getPaymentStatusForFinance(): string
+    {
+        $totalOrderAmount = $this->total_amount + ($this->shipping_amount ?? 0);
+        $paidAmount = $this->getTotalPaidAmount();
+        $minimumRequired = $totalOrderAmount * 0.5;
+
+        if ($paidAmount >= $totalOrderAmount) {
+            return 'fully_paid';
+        } elseif ($paidAmount >= $minimumRequired) {
+            return 'minimum_met';
+        } elseif ($paidAmount > 0) {
+            return 'insufficient';
+        } else {
+            return 'unpaid';
+        }
     }
 
     public function isStalled(): bool

@@ -276,6 +276,80 @@ php artisan serve
 - updated_at (timestamp)
 ```
 
+## Fluxos de Trabalho do Sistema
+
+### 1. Fluxo de Vendas e Pagamentos
+
+#### Criação da Venda
+1. **Vendedora** cria pedido com detalhes do produto e cliente
+2. **Sistema** gera token único para rastreamento (`unique_token`)
+3. **Cliente** pode completar endereço via link personalizado: `/pedido/{token}`
+
+#### Verificação de Pagamento
+1. **Cliente** envia comprovante de pagamento (qualquer valor)
+2. **Admin Financeiro** revisa e aprova o pagamento processado
+3. **Não há valores fixos** de 50% ou 100% - o sistema aceita qualquer quantia
+4. **Produção inicia** imediatamente após aprovação financeira
+5. **Pagamento restante** pode ser processado antes ou após aprovação da foto
+
+### 2. Fluxo de Produção e Aprovação de Foto
+
+#### Processo de Produção
+1. **Admin de Produção** inicia produção após aprovação financeira
+2. **Sistema** valida informações obrigatórias (nome, bordado, etc.)
+3. **Endereço de entrega** é opcional para início da produção
+4. **Admin** fotografa produto finalizado e envia para aprovação
+
+#### Aprovação da Foto pelo Cliente
+1. **Cliente** acessa link personalizado: `/pedido/{token}`
+2. **Sistema** exibe foto do produto finalizado
+3. **Cliente** pode:
+   - ✅ **Aprovar** a foto (pedido avança)
+   - ❌ **Solicitar ajustes** com motivo específico
+4. **Se rejeitada**: Pedido retorna para produção com feedback
+5. **Se aprovada**: Sistema verifica se precisa de pagamento final
+
+### 3. Sistema de Entrega e Rastreamento
+
+#### Integração Híbrida com Tiny ERP
+1. **Sistema principal**: Integração com Tiny ERP para NF-e e etiquetas
+2. **Sistema de backup**: Geração interna caso Tiny ERP falhe
+3. **Endereço obrigatório** apenas na etapa de envio (não na produção)
+
+#### Geração de Nota Fiscal
+- **Tentativa primária**: API Tiny ERP gera NF-e oficial
+- **Fallback automático**: Sistema gera número interno `NF-YYYY-000001`
+- **Sempre funciona**: Sistema nunca falha por problemas de ERP
+
+#### Geração de Etiqueta de Envio
+- **Tentativa primária**: Tiny ERP gera etiqueta dos Correios
+- **Fallback automático**: Sistema gera código interno `BB000001BR`
+- **Rastreamento garantido**: Cliente sempre recebe código de rastreio
+
+#### Notificação do Cliente
+1. **Link personalizado** atualizado com informações de envio
+2. **WhatsApp** envia código de rastreamento automaticamente
+3. **Sistema resiliente** funciona independente de falhas externas
+
+### 4. Experiência do Cliente via Link Personalizado
+
+#### Funcionalidades Disponíveis
+- **Visualizar** status em tempo real do pedido
+- **Completar** endereço de entrega (se necessário)
+- **Enviar** comprovantes de pagamento adicional
+- **Aprovar/rejeitar** foto do produto
+- **Acompanhar** código de rastreamento
+
+#### Estados do Pedido Visíveis
+- `pending_payment` - Aguardando pagamento
+- `payment_approved` - Pagamento aprovado, em produção
+- `in_production` - Produto sendo confeccionado
+- `photo_sent` - Foto enviada para aprovação
+- `photo_approved` - Foto aprovada pelo cliente
+- `pending_final_payment` - Aguardando pagamento final (se necessário)
+- `ready_for_shipping` - Pronto para envio
+- `shipped` - Enviado com código de rastreamento
+
 ## Regras de Negócio
 
 ### Sistema de Comissões

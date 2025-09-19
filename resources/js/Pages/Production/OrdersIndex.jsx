@@ -126,14 +126,18 @@ export default function OrdersIndex({ orders, statusFilter }) {
             payment_approved: 'bg-green-100 text-green-800',
             in_production: 'bg-blue-100 text-blue-800',
             photo_sent: 'bg-purple-100 text-purple-800',
+            photo_approved: 'bg-indigo-100 text-indigo-800',
+            pending_final_payment: 'bg-orange-100 text-orange-800',
             ready_for_shipping: 'bg-teal-100 text-teal-800',
             shipped: 'bg-gray-100 text-gray-800'
         };
-        
+
         const labels = {
             payment_approved: '✅ Pronto para Produção',
             in_production: '🏭 Em Produção',
             photo_sent: '📸 Foto Enviada',
+            photo_approved: '✨ Foto Aprovada',
+            pending_final_payment: '💰 Aguardando Pagamento Final',
             ready_for_shipping: '📦 Pronto para Envio',
             shipped: '🚚 Enviado'
         };
@@ -173,6 +177,24 @@ export default function OrdersIndex({ orders, statusFilter }) {
                     >
                         Enviar Foto
                     </button>
+                );
+            case 'photo_sent':
+                return (
+                    <span className="text-purple-600 text-sm px-4 py-2 bg-purple-50 rounded-lg">
+                        📱 Aguardando Cliente
+                    </span>
+                );
+            case 'photo_approved':
+                return (
+                    <span className="text-indigo-600 text-sm px-4 py-2 bg-indigo-50 rounded-lg">
+                        ✅ Aguardando Pagamento
+                    </span>
+                );
+            case 'pending_final_payment':
+                return (
+                    <span className="text-orange-600 text-sm px-4 py-2 bg-orange-50 rounded-lg">
+                        💰 Aguardando Financeiro
+                    </span>
                 );
             case 'ready_for_shipping':
                 return (
@@ -219,6 +241,8 @@ export default function OrdersIndex({ orders, statusFilter }) {
         payment_approved: orders.data?.filter(o => o.order_status === 'payment_approved').length || 0,
         in_production: orders.data?.filter(o => o.order_status === 'in_production').length || 0,
         photo_sent: orders.data?.filter(o => o.order_status === 'photo_sent').length || 0,
+        photo_approved: orders.data?.filter(o => o.order_status === 'photo_approved').length || 0,
+        pending_final_payment: orders.data?.filter(o => o.order_status === 'pending_final_payment').length || 0,
         ready_for_shipping: orders.data?.filter(o => o.order_status === 'ready_for_shipping').length || 0
     };
 
@@ -268,17 +292,47 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         href="/production/orders?status=in_production"
                                         className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm ${
                                             statusFilter === 'in_production'
-                                                ? 'border-blue-500 text-blue-600' 
+                                                ? 'border-blue-500 text-blue-600'
                                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                         }`}
                                     >
                                         Em Produção ({statusCounts.in_production})
                                     </Link>
                                     <Link
+                                        href="/production/orders?status=photo_sent"
+                                        className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm ${
+                                            statusFilter === 'photo_sent'
+                                                ? 'border-purple-500 text-purple-600'
+                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        Foto Enviada ({statusCounts.photo_sent})
+                                    </Link>
+                                    <Link
+                                        href="/production/orders?status=photo_approved"
+                                        className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm ${
+                                            statusFilter === 'photo_approved'
+                                                ? 'border-indigo-500 text-indigo-600'
+                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        Foto Aprovada ({statusCounts.photo_approved})
+                                    </Link>
+                                    <Link
+                                        href="/production/orders?status=pending_final_payment"
+                                        className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm ${
+                                            statusFilter === 'pending_final_payment'
+                                                ? 'border-orange-500 text-orange-600'
+                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        Pagamento Final ({statusCounts.pending_final_payment})
+                                    </Link>
+                                    <Link
                                         href="/production/orders?status=ready_for_shipping"
                                         className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm ${
                                             statusFilter === 'ready_for_shipping'
-                                                ? 'border-teal-500 text-teal-600' 
+                                                ? 'border-teal-500 text-teal-600'
                                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                         }`}
                                     >
