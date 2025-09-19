@@ -164,7 +164,13 @@ class ProductionController extends Controller
         if ($sale->order_status !== 'ready_for_shipping') {
             return back()->withErrors(['error' => 'Pedido não está pronto para envio']);
         }
-        
+
+        // Validate delivery address before shipping
+        $shippingErrors = $this->validateShippingRequirements($sale);
+        if (!empty($shippingErrors)) {
+            return back()->withErrors(['validation' => $shippingErrors]);
+        }
+
         try {
             // Generate tracking code
             $trackingCode = 'BB' . str_pad($sale->id, 6, '0', STR_PAD_LEFT) . 'BR';
@@ -259,22 +265,9 @@ class ProductionController extends Controller
             $errors[] = 'Cor do bordado deve ser especificada';
         }
 
-        // Delivery address validation
-        if (empty($sale->delivery_address)) {
-            $errors[] = 'Endereço de entrega é obrigatório';
-        }
-
-        if (empty($sale->delivery_city)) {
-            $errors[] = 'Cidade de entrega é obrigatória';
-        }
-
-        if (empty($sale->delivery_state)) {
-            $errors[] = 'Estado de entrega é obrigatório';
-        }
-
-        if (empty($sale->delivery_zipcode)) {
-            $errors[] = 'CEP de entrega é obrigatório';
-        }
+        // Delivery address validation - Optional for production start
+        // Address will be required before shipping, not production start
+        // This allows production to begin while customer completes address info
 
         // Payment validation - Skip this as it's already validated at finance approval stage
         // Payment proof is checked during finance approval, not production start
@@ -282,6 +275,33 @@ class ProductionController extends Controller
         // Finance approval validation - This ensures payment was already validated
         if (empty($sale->finance_admin_id)) {
             $errors[] = 'Pagamento deve ser aprovado pelo financeiro antes da produção';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validate all requirements before generating shipping label
+     */
+    private function validateShippingRequirements(Sale $sale)
+    {
+        $errors = [];
+
+        // Delivery address validation - Required for shipping
+        if (empty($sale->delivery_address)) {
+            $errors[] = 'Endereço de entrega é obrigatório para gerar etiqueta de envio';
+        }
+
+        if (empty($sale->delivery_city)) {
+            $errors[] = 'Cidade de entrega é obrigatória para gerar etiqueta de envio';
+        }
+
+        if (empty($sale->delivery_state)) {
+            $errors[] = 'Estado de entrega é obrigatório para gerar etiqueta de envio';
+        }
+
+        if (empty($sale->delivery_zipcode)) {
+            $errors[] = 'CEP de entrega é obrigatório para gerar etiqueta de envio';
         }
 
         return $errors;
