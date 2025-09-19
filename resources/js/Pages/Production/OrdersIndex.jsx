@@ -45,13 +45,13 @@ export default function OrdersIndex({ orders, statusFilter }) {
             toast.error(`Este pedido não pode iniciar produção. Status atual: ${order.order_status}`);
             return;
         }
-        
+
         post(`/production/orders/${order.id}/start`, {
             onSuccess: () => {
                 toast.success('Produção iniciada com sucesso!');
                 setShowModal(false);
-                // Reload the page to show updated data
-                window.location.reload();
+                // Redirect to in_production tab to show the order's new location
+                router.get('/production/orders?status=in_production');
             },
             onError: (errors) => {
                 console.error('Error starting production:', errors);
@@ -83,11 +83,13 @@ export default function OrdersIndex({ orders, statusFilter }) {
             toast.error('Por favor, selecione uma foto do produto');
             return;
         }
-        
+
         post(`/production/orders/${selectedOrder.id}/upload-photo`, {
             onSuccess: () => {
                 toast.success('Foto enviada para aprovação!');
                 setShowModal(false);
+                // Redirect to photo_sent tab to show the order's new location
+                router.get('/production/orders?status=photo_sent');
             }
         });
     };
@@ -96,7 +98,8 @@ export default function OrdersIndex({ orders, statusFilter }) {
         post(`/production/orders/${order.id}/generate-shipping`, {
             onSuccess: () => {
                 toast.success('Etiqueta de envio gerada!');
-                // Don't close modal since this is direct button action, not modal action
+                // Redirect to show all orders or shipped orders depending on implementation
+                router.get('/production/orders');
             },
             onError: (errors) => {
                 if (errors.error) {

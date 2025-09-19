@@ -66,9 +66,18 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
 
     const approvePhoto = () => {
         post(`/pedido/${sale.unique_token}/approve-photo`, {
-            data: { approved: true },
+            approved: true
+        }, {
             onSuccess: () => {
-                toast.success('Foto aprovada! 🎉');
+                toast.success('Foto aprovada! 🎉 Verificando próximos passos...');
+                // Reload the page after a short delay to show updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            },
+            onError: (errors) => {
+                console.error('Photo approval error:', errors);
+                toast.error('Erro ao aprovar foto. Tente novamente.');
             }
         });
     };
@@ -80,9 +89,15 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
         }
         
         post(`/pedido/${sale.unique_token}/approve-photo`, {
-            data: { approved: false, reason: data.photo_rejection_reason },
+            approved: false,
+            reason: data.photo_rejection_reason
+        }, {
             onSuccess: () => {
-                toast.success('Solicitação de ajuste enviada');
+                toast.success('Solicitação de ajuste enviada! 🔄');
+            },
+            onError: (errors) => {
+                console.error('Photo rejection error:', errors);
+                toast.error('Erro ao enviar solicitação. Tente novamente.');
             }
         });
     };
