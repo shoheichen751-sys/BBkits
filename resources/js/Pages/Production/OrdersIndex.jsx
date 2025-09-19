@@ -517,6 +517,24 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                                 <label className="text-sm font-medium text-gray-600">Telefone</label>
                                                 <p className="text-gray-900">{selectedOrder.client_phone || 'Não informado'}</p>
                                             </div>
+                                            {selectedOrder.unique_token && (
+                                                <div>
+                                                    <label className="text-sm font-medium text-gray-600">Link do Cliente</label>
+                                                    <div className="mt-1">
+                                                        <a
+                                                            href={`/pedido/${selectedOrder.unique_token}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                                                        >
+                                                            🔗 Abrir Página do Cliente
+                                                        </a>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Token: {selectedOrder.unique_token}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
                                             <div>
                                                 <label className="text-sm font-medium text-gray-600">Endereço de Entrega</label>
                                                 <p className="text-gray-900">
