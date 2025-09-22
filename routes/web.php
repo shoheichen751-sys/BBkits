@@ -245,6 +245,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::get('/orders', [\App\Http\Controllers\ProductionController::class, 'ordersIndex'])->name('orders.index');
         Route::post('/orders/{sale}/start', [\App\Http\Controllers\ProductionController::class, 'startProduction'])->name('orders.start');
         Route::post('/orders/{sale}/upload-photo', [\App\Http\Controllers\ProductionController::class, 'uploadPhoto'])->name('orders.upload-photo');
+        Route::post('/orders/{sale}/process-photo-approved', [\App\Http\Controllers\ProductionController::class, 'processPhotoApproved'])->name('orders.process-photo-approved');
         Route::post('/orders/{sale}/generate-shipping', [\App\Http\Controllers\ProductionController::class, 'generateShippingLabel'])->name('orders.generate-shipping');
         Route::get('/dashboard', [\App\Http\Controllers\ProductionController::class, 'dashboard'])->name('dashboard');
     });

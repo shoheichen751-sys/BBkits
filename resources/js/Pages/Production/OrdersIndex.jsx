@@ -57,13 +57,13 @@ export default function OrdersIndex({ orders, statusFilter }) {
     const handleStartProduction = (order) => {
         // Check if order can start production
         if (order.order_status !== 'payment_approved') {
-            toast.error(`Este pedido não pode iniciar produção. Status atual: ${order.order_status}`);
+            alert(`❌ ERRO DE STATUS\n\nPedido #${order.unique_token}\n🚫 Este pedido não pode iniciar produção\n\n📊 Status atual: ${order.order_status}\n✅ Status necessário: payment_approved\n\n💡 Verifique se o pagamento foi aprovado pelo financeiro antes de iniciar a produção.`);
             return;
         }
 
         post(`/production/orders/${order.id}/start`, {
             onSuccess: () => {
-                toast.success('Produção iniciada com sucesso!');
+                alert(`🏭 PRODUÇÃO INICIADA!\n\nPedido #${order.unique_token}\n✅ Produção foi iniciada com sucesso!\n\n📊 Status: Em Produção\n👤 Admin: Você\n\n🔔 Notificações enviadas para:\n• Vendedor\n• Equipe de Produção\n• Equipe Financeira\n📱 Cliente via WhatsApp`);
                 setShowModal(false);
                 // Update order status locally for immediate UI feedback
                 updateOrderStatus(order.id, 'in_production');
@@ -73,37 +73,31 @@ export default function OrdersIndex({ orders, statusFilter }) {
             onError: (errors) => {
                 console.error('Error starting production:', errors);
                 if (errors.error) {
-                    toast.error(errors.error);
+                    alert(`❌ ERRO AO INICIAR PRODUÇÃO\n\nPedido #${order.unique_token}\n🚫 ${errors.error}\n\n💡 Verifique:\n• Status do pedido\n• Aprovação do pagamento\n• Informações obrigatórias`);
                 } else if (errors.validation) {
-                    // Handle both array and string validation errors
-                    const validationMessage = Array.isArray(errors.validation) 
+                    const validationMessage = Array.isArray(errors.validation)
                         ? errors.validation.join(', ')
                         : errors.validation;
-                    toast.error('Erro de validação: ' + validationMessage);
+                    alert(`❌ ERRO DE VALIDAÇÃO\n\nPedido #${order.unique_token}\n🚫 ${validationMessage}\n\n💡 Corrija os dados necessários e tente novamente.`);
                 } else if (errors.message) {
-                    toast.error(errors.message);
+                    alert(`❌ ERRO\n\nPedido #${order.unique_token}\n🚫 ${errors.message}`);
                 } else {
-                    toast.error('Erro ao iniciar produção. Verifique o status do pedido.');
+                    alert(`❌ ERRO DESCONHECIDO\n\nPedido #${order.unique_token}\n🚫 Erro ao iniciar produção\n\n💡 Verifique o status do pedido e tente novamente.`);
                 }
             },
-            onStart: () => {
-                toast.loading('Iniciando produção...');
-            },
-            onFinish: () => {
-                toast.dismiss();
-            }
+            // No loading indicators needed for alert-based notifications
         });
     };
 
     const handlePhotoUpload = () => {
         if (!data.product_photo) {
-            toast.error('Por favor, selecione uma foto do produto');
+            alert(`📸 FOTO NECESSÁRIA\n\n🚫 Por favor, selecione uma foto do produto\n\n💡 Para enviar a foto para aprovação do cliente, você precisa:\n1. Selecionar um arquivo de imagem\n2. Verificar se a qualidade está boa\n3. Clicar em "Enviar Foto"`);
             return;
         }
 
         post(`/production/orders/${selectedOrder.id}/upload-photo`, {
             onSuccess: () => {
-                toast.success('Foto enviada para aprovação!');
+                alert(`📸 FOTO ENVIADA PARA APROVAÇÃO!\n\nPedido #${selectedOrder.unique_token}\n✅ Foto do produto enviada com sucesso!\n\n📊 Status: Foto Enviada\n👀 Aguardando: Aprovação do Cliente\n\n🔔 Notificações enviadas para:\n• Vendedor\n• Equipe de Produção\n• Equipe Financeira\n📱 Cliente via WhatsApp (Solicitação de Aprovação)`);
                 setShowModal(false);
                 // Update order status locally for immediate UI feedback
                 updateOrderStatus(selectedOrder.id, 'photo_sent');
@@ -116,7 +110,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
     const handleGenerateShipping = (order) => {
         post(`/production/orders/${order.id}/generate-shipping`, {
             onSuccess: () => {
-                toast.success('Etiqueta de envio gerada!');
+                alert(`🚚 PEDIDO ENVIADO!\n\nPedido #${order.unique_token}\n📦 Etiqueta de envio gerada com sucesso!\n\n📊 Status: Enviado\n🏷️ Código de Rastreamento: BB${String(order.id).padStart(6, '0')}BR\n📋 Nota Fiscal: NF-${new Date().getFullYear()}-${String(order.id).padStart(6, '0')}\n\n🔔 Notificações enviadas para:\n• Vendedor\n• Equipe de Produção\n• Equipe Financeira\n📱 Cliente via WhatsApp (Código de Rastreamento)\n\n🎉 Pedido finalizado com sucesso!`);
                 // Update order status locally for immediate UI feedback
                 updateOrderStatus(order.id, 'shipped');
                 // Redirect to show all orders or shipped orders depending on implementation
@@ -124,9 +118,29 @@ export default function OrdersIndex({ orders, statusFilter }) {
             },
             onError: (errors) => {
                 if (errors.error) {
-                    toast.error(errors.error);
+                    alert(`❌ ERRO AO GERAR ENVIO\n\nPedido #${order.unique_token}\n🚫 ${errors.error}\n\n💡 Verifique:\n• Status do pedido (deve estar pronto para envio)\n• Endereço de entrega completo\n• Dados obrigatórios`);
                 } else {
-                    toast.error('Erro ao gerar etiqueta de envio.');
+                    alert(`❌ ERRO AO GERAR ENVIO\n\nPedido #${order.unique_token}\n🚫 Erro ao gerar etiqueta de envio\n\n💡 Tente novamente ou verifique os dados do pedido.`);
+                }
+            }
+        });
+    };
+
+    const handleProcessPhotoApproved = (order) => {
+        post(`/production/orders/${order.id}/process-photo-approved`, {
+            onSuccess: () => {
+                alert(`✅ APROVAÇÃO PROCESSADA!\n\nPedido #${order.unique_token}\n🎉 Cliente aprovou a foto!\n\n📊 Próximo passo: Verificando pagamento...\n💰 Se precisar pagamento final → Aguardar Financeiro\n📦 Se pago integralmente → Pronto para Envio\n\n🔔 Notificações enviadas para:\n• Vendedor\n• Equipe de Produção\n• Equipe Financeira\n📱 Cliente via WhatsApp (se precisar pagamento final)`);
+                // The order will move to either pending_final_payment or ready_for_shipping
+                // Refresh the page to see the updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            },
+            onError: (errors) => {
+                if (errors.error) {
+                    alert(`❌ ERRO AO PROCESSAR APROVAÇÃO\n\nPedido #${order.unique_token}\n🚫 ${errors.error}\n\n💡 Verifique:\n• Status do pedido (deve estar com foto aprovada)\n• Dados de pagamento\n• Conexão com o sistema`);
+                } else {
+                    alert(`❌ ERRO AO PROCESSAR APROVAÇÃO\n\nPedido #${order.unique_token}\n🚫 Erro ao processar pedido aprovado\n\n💡 Tente novamente ou verifique o status do pedido.`);
                 }
             }
         });
@@ -210,9 +224,15 @@ export default function OrdersIndex({ orders, statusFilter }) {
                 );
             case 'photo_approved':
                 return (
-                    <span className="text-indigo-600 text-sm px-4 py-2 bg-indigo-50 rounded-lg">
-                        ✅ Aguardando Pagamento
-                    </span>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleProcessPhotoApproved(order);
+                        }}
+                        className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors text-sm"
+                    >
+                        Processar Aprovação
+                    </button>
                 );
             case 'pending_final_payment':
                 return (

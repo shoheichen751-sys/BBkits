@@ -1047,7 +1047,7 @@ class SaleController extends Controller
         if ($validated['approved']) {
             $sale->update([
                 'photo_approved_at' => now(),
-                'order_status' => $sale->needsFinalPayment() ? 'pending_final_payment' : 'ready_for_shipping'
+                'order_status' => 'photo_approved'  // ALWAYS go to photo_approved first
             ]);
 
             $this->notificationService->notifyPhotoApproved($sale);

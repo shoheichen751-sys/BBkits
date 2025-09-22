@@ -228,6 +228,50 @@ class ProductionController extends Controller
         }
     }
 
+    /**
+     * Process photo approved orders - decide next step based on payment status
+     */
+    public function processPhotoApproved(Sale $sale)
+    {
+        if ($sale->order_status !== 'photo_approved') {
+            return back()->withErrors(['error' => 'Pedido não está com foto aprovada']);
+        }
+
+        try {
+            // Refresh the sale to get latest payment information
+            $sale->refresh();
+
+            // Determine next status based on payment completeness
+            if ($sale->needsFinalPayment()) {
+                $sale->update(['order_status' => 'pending_final_payment']);
+                $message = 'Pedido movido para aguardar pagamento final';
+
+                // Send final payment reminder to client
+                $notificationService = app(\App\Services\NotificationService::class);
+                $notificationService->notifyFinalPaymentReminder($sale);
+            } else {
+                $sale->update(['order_status' => 'ready_for_shipping']);
+                $message = 'Pedido pronto para envio!';
+            }
+
+            Log::info('Photo approved order processed', [
+                'order_id' => $sale->id,
+                'new_status' => $sale->order_status,
+                'admin_id' => auth()->id()
+            ]);
+
+            return back()->with('message', $message);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to process photo approved order', [
+                'order_id' => $sale->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->withErrors(['error' => 'Erro ao processar pedido aprovado']);
+        }
+    }
+
     public function dashboard()
     {
         $paymentApproved = Sale::where('order_status', 'payment_approved')->count();
