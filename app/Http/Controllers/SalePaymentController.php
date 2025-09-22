@@ -14,19 +14,10 @@ class SalePaymentController extends Controller
     {
         $payments = $sale->payments()->with('approvedBy')->orderBy('payment_date', 'desc')->get();
 
-        // UNIFIED PAYMENT CALCULATION LOGIC (used across all controllers)
-        $totalWithShipping = (float) $sale->total_amount + (float) $sale->shipping_amount;
-
-        // Use direct database queries to avoid any caching issues
-        $approvedPaidAmount = (float) \App\Models\SalePayment::where('sale_id', $sale->id)
-            ->where('status', 'approved')
-            ->sum('amount');
-
-        $pendingAmount = (float) \App\Models\SalePayment::where('sale_id', $sale->id)
-            ->where('status', 'pending')
-            ->sum('amount');
-
-        // UNIFIED CALCULATION: Use model method for mathematical consistency
+        // UNIFIED CALCULATIONS - IDENTICAL TO ALL OTHER PAGES
+        $totalWithShipping = $sale->getTotalAmount();
+        $approvedPaidAmount = $sale->getTotalPaidAmount();
+        $pendingAmount = $sale->getTotalPendingAmount();
         $remainingAmount = $sale->getRemainingAmount();
 
         

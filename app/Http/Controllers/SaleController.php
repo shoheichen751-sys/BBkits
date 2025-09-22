@@ -981,19 +981,10 @@ class SaleController extends Controller
         // Load payments relationship explicitly
         $sale->load('payments');
 
-        // UNIFIED PAYMENT CALCULATION LOGIC (identical to all other controllers)
-        $totalWithShipping = (float) $sale->total_amount + (float) $sale->shipping_amount;
-
-        // Force fresh queries to ensure no caching issues
-        $approvedPaidAmount = (float) $sale->payments()
-            ->where('status', 'approved')
-            ->sum('amount');
-
-        $pendingAmount = (float) $sale->payments()
-            ->where('status', 'pending')
-            ->sum('amount');
-
-        // UNIFIED CALCULATION: Use model method for mathematical consistency
+        // UNIFIED CALCULATIONS - IDENTICAL TO ALL OTHER PAGES
+        $totalWithShipping = $sale->getTotalAmount();
+        $approvedPaidAmount = $sale->getTotalPaidAmount();
+        $pendingAmount = $sale->getTotalPendingAmount();
         $remainingAmount = $sale->getRemainingAmount();
 
 

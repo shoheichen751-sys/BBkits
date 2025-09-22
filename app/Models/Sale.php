@@ -316,21 +316,25 @@ class Sale extends Model
         return $this->hasMany(SalePayment::class)->where('status', 'pending');
     }
 
+    // UNIFIED PAYMENT CALCULATIONS - IDENTICAL ACROSS ALL PAGES
+    public function getTotalAmount(): float
+    {
+        return (float) $this->total_amount + (float) $this->shipping_amount;
+    }
+
     public function getTotalPaidAmount(): float
     {
-        // UNIFIED CALCULATION: Only count approved payments (consistent across all controllers)
         return (float) $this->approvedPayments()->sum('amount');
     }
 
     public function getTotalPendingAmount(): float
     {
-        return $this->pendingPayments()->sum('amount');
+        return (float) $this->pendingPayments()->sum('amount');
     }
 
     public function getRemainingAmount(): float
     {
-        // UNIFIED CALCULATION: Remaining = Total - (Approved + Pending) for mathematical consistency
-        return max(0, ($this->total_amount + $this->shipping_amount) - $this->getTotalPaidAmount() - $this->getTotalPendingAmount());
+        return max(0, $this->getTotalAmount() - $this->getTotalPaidAmount() - $this->getTotalPendingAmount());
     }
 
     public function isFullyPaid(): bool

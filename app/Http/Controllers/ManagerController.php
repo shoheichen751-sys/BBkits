@@ -36,14 +36,15 @@ class ManagerController extends Controller
 
         $orders = $query->paginate(20)->withQueryString();
         
-        // Add payment status information to each order using UNIFIED CALCULATION LOGIC
+        // Add payment status information using UNIFIED CALCULATIONS - IDENTICAL TO ALL PAGES
         $orders->getCollection()->transform(function ($order) {
-            // Use unified payment calculation methods (consistent across all controllers)
+            $order->total_amount_with_shipping = $order->getTotalAmount();
+            $order->total_paid_amount = $order->getTotalPaidAmount();
+            $order->total_pending_amount = $order->getTotalPendingAmount();
+            $order->remaining_amount = $order->getRemainingAmount();
             $order->payment_progress = $order->getPaymentProgress();
             $order->payment_status = $order->getPaymentStatus();
             $order->is_fully_paid = $order->isFullyPaid();
-            $order->total_paid_amount = $order->getTotalPaidAmount();
-            $order->remaining_amount = $order->getRemainingAmount();
             $order->can_print = $order->isFullyPaid() && !empty($order->finance_admin_id);
 
             return $order;
