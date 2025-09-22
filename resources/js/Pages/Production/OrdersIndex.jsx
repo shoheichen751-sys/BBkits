@@ -131,11 +131,26 @@ export default function OrdersIndex({ orders, statusFilter }) {
         post(`/production/orders/${order.id}/process-photo-approved`, {
             onSuccess: () => {
                 toast.success('✨ Pedido processado com sucesso!');
-                // The order will move to either pending_final_payment or ready_for_shipping
-                // Refresh the page to see the updated status
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
+                // Get the updated order status from the response or check if order needs final payment
+                const totalAmount = parseFloat(order.total_amount) + parseFloat(order.shipping_amount || 0);
+                const approvedPayments = order.payments ? order.payments.filter(p => p.status === 'approved') : [];
+                const paidAmount = approvedPayments.length > 0
+                    ? approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0)
+                    : parseFloat(order.received_amount || 0);
+                const needsFinalPayment = paidAmount < totalAmount;
+
+                // Redirect to the appropriate tab based on payment status
+                if (needsFinalPayment) {
+                    // Order needs final payment, redirect to pending_final_payment tab
+                    setTimeout(() => {
+                        router.get('/production/orders?status=pending_final_payment');
+                    }, 1500);
+                } else {
+                    // Order is fully paid, redirect to ready_for_shipping tab
+                    setTimeout(() => {
+                        router.get('/production/orders?status=ready_for_shipping');
+                    }, 1500);
+                }
             },
             onError: (errors) => {
                 if (errors.error) {

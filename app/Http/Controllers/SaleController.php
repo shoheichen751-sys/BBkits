@@ -971,6 +971,12 @@ class SaleController extends Controller
     {
         $sale = Sale::where('unique_token', $token)->firstOrFail();
         
+        // Calculate payment summary using the same logic as admin payment page
+        $totalWithShipping = $sale->total_amount + $sale->shipping_amount;
+        $approvedPaidAmount = $sale->approvedPayments()->sum('amount');
+        $pendingAmount = $sale->pendingPayments()->sum('amount');
+        $remainingAmount = max(0, $totalWithShipping - $approvedPaidAmount);
+
         return Inertia::render('Sales/ClientPage', [
             'sale' => $sale->load([
                 'user',
@@ -982,9 +988,11 @@ class SaleController extends Controller
             ]),
             'orderStatus' => $sale->getOrderStatusLabel(),
             'orderStatusColor' => $sale->getOrderStatusColor(),
-            'paidAmount' => $sale->getTotalPaidAmount(),
-            'remainingAmount' => $sale->getRemainingAmount(),
-            'needsFinalPayment' => $sale->needsFinalPayment(),
+            'paidAmount' => $approvedPaidAmount,
+            'remainingAmount' => $remainingAmount,
+            'pendingAmount' => $pendingAmount,
+            'totalAmount' => $totalWithShipping,
+            'needsFinalPayment' => $remainingAmount > 0,
             'productPhotoUrl' => $sale->getProductPhotoUrl()
         ]);
     }
@@ -1011,25 +1019,46 @@ class SaleController extends Controller
     public function clientUploadPayment(Request $request, $token)
     {
         $sale = Sale::where('unique_token', $token)->firstOrFail();
-        
+
         $validated = $request->validate([
-            'final_payment_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048'
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string|max:255',
+            'payment_date' => 'required|date',
+            'payment_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:5120', // 5MB max
+            'notes' => 'nullable|string|max:1000'
         ]);
-        
-        if ($request->hasFile('final_payment_proof')) {
-            $file = $request->file('final_payment_proof');
-            $fileContent = file_get_contents($file->getRealPath());
-            $mimeType = $file->getMimeType();
-            
-            $sale->final_payment_proof_data = 'data:' . $mimeType . ';base64,' . base64_encode($fileContent);
-            $sale->final_payment_proof = $file->store('receipts', 'public');
-            $sale->save();
-            
-            // Notify admin about new payment proof
-            $this->notificationService->notifyPaymentUploaded($sale);
+
+        // Check if payment amount doesn't exceed remaining amount
+        $remainingAmount = max(0, ($sale->total_amount + $sale->shipping_amount) - $sale->approvedPayments()->sum('amount'));
+        if ($validated['amount'] > $remainingAmount) {
+            return back()->withErrors([
+                'amount' => "O valor do pagamento (R$ " . number_format($validated['amount'], 2, ',', '.') . ") não pode ser maior que o valor restante (R$ " . number_format($remainingAmount, 2, ',', '.') . ")"
+            ]);
         }
-        
-        return back()->with('message', 'Comprovante enviado com sucesso!');
+
+        // Store payment receipt
+        $receiptPath = null;
+        if ($request->hasFile('payment_proof')) {
+            $receiptPath = $request->file('payment_proof')->store('payment-receipts', 'public');
+        }
+
+        // Create payment record (pending approval)
+        $payment = \App\Models\SalePayment::create([
+            'sale_id' => $sale->id,
+            'amount' => $validated['amount'],
+            'payment_date' => $validated['payment_date'],
+            'payment_method' => $validated['payment_method'],
+            'receipt_path' => $receiptPath,
+            'notes' => $validated['notes'],
+            'status' => 'pending', // Always pending for client payments
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
+
+        // Notify admin about new payment for approval
+        $this->notificationService->notifyPaymentUploaded($sale);
+
+        return back()->with('message', 'Pagamento de R$ ' . number_format($validated['amount'], 2, ',', '.') . ' enviado para aprovação!');
     }
 
     public function clientApprovePhoto(Request $request, $token)

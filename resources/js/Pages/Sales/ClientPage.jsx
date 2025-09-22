@@ -3,7 +3,7 @@ import { Head, useForm, router } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import { formatBRL } from '@/utils/currency';
 
-export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAmount, remainingAmount, needsFinalPayment, productPhotoUrl }) {
+export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAmount, remainingAmount, pendingAmount, totalAmount, needsFinalPayment, productPhotoUrl }) {
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const [showAddressForm, setShowAddressForm] = useState(!sale.delivery_address);
     const [paymentPreview, setPaymentPreview] = useState(null);
@@ -17,7 +17,11 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
         delivery_city: sale.delivery_city || '',
         delivery_state: sale.delivery_state || '',
         delivery_zipcode: sale.delivery_zipcode || '',
-        final_payment_proof: null,
+        amount: '',
+        payment_method: 'pix',
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_proof: null,
+        notes: '',
         photo_approved: false,
         photo_rejection_reason: ''
     });
@@ -25,8 +29,8 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
     const handlePaymentProofChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setData('final_payment_proof', file);
-            
+            setData('payment_proof', file);
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPaymentPreview(reader.result);
@@ -57,10 +61,37 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
 
     const submitPayment = (e) => {
         e.preventDefault();
+
+        // Validate required fields
+        if (!data.amount || parseFloat(data.amount) <= 0) {
+            toast.error('Por favor, informe o valor do pagamento');
+            return;
+        }
+
+        if (!data.payment_proof) {
+            toast.error('Por favor, anexe o comprovante de pagamento');
+            return;
+        }
+
         post(`/pedido/${sale.unique_token}/upload-payment`, {
             onSuccess: () => {
-                toast.success('Comprovante enviado com sucesso!');
+                toast.success('Pagamento enviado para aprovação!');
                 setShowPaymentForm(false);
+                // Reset payment form
+                setData({
+                    ...data,
+                    amount: '',
+                    payment_proof: null,
+                    notes: ''
+                });
+                setPaymentPreview(null);
+            },
+            onError: (errors) => {
+                if (errors.amount) {
+                    toast.error(errors.amount);
+                } else {
+                    toast.error('Erro ao enviar pagamento. Tente novamente.');
+                }
             }
         });
     };
@@ -601,22 +632,83 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                                     Enviar Comprovante
                                 </button>
                             ) : (
-                                <form onSubmit={submitPayment} className="space-y-4">
+                                <form onSubmit={submitPayment} className="space-y-6">
+                                    {/* Payment Amount */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Comprovante de Pagamento
+                                            💰 Valor do Pagamento *
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0.01"
+                                                max={remainingAmount}
+                                                value={data.amount}
+                                                onChange={e => setData('amount', e.target.value)}
+                                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+                                                placeholder="0,00"
+                                                required
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Valor restante: {formatBRL(remainingAmount)}
+                                        </p>
+                                        {errors.amount && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.amount}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Payment Method */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            💳 Método de Pagamento *
+                                        </label>
+                                        <select
+                                            value={data.payment_method}
+                                            onChange={e => setData('payment_method', e.target.value)}
+                                            className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+                                            required
+                                        >
+                                            <option value="pix">PIX</option>
+                                            <option value="transferencia">Transferência Bancária</option>
+                                            <option value="debito">Cartão de Débito</option>
+                                            <option value="credito">Cartão de Crédito</option>
+                                            <option value="dinheiro">Dinheiro</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Payment Date */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            📅 Data do Pagamento *
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={data.payment_date}
+                                            onChange={e => setData('payment_date', e.target.value)}
+                                            className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Payment Proof */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            📄 Comprovante de Pagamento *
                                         </label>
                                         <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-orange-400 transition-colors">
                                             <div className="space-y-1 text-center">
                                                 {paymentPreview ? (
                                                     <div>
-                                                        <img 
-                                                            src={paymentPreview} 
-                                                            alt="Preview" 
+                                                        <img
+                                                            src={paymentPreview}
+                                                            alt="Preview"
                                                             className="mx-auto h-32 w-auto rounded"
                                                         />
                                                         <p className="text-sm text-gray-600 mt-2">
-                                                            {data.final_payment_proof?.name}
+                                                            {data.payment_proof?.name}
                                                         </p>
                                                     </div>
                                                 ) : (
@@ -625,10 +717,10 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                         </svg>
                                                         <div className="flex text-sm text-gray-600">
-                                                            <label htmlFor="final_payment_proof" className="relative cursor-pointer rounded-md bg-white font-medium text-orange-600 hover:text-orange-500">
+                                                            <label htmlFor="payment_proof" className="relative cursor-pointer rounded-md bg-white font-medium text-orange-600 hover:text-orange-500">
                                                                 <span>Enviar arquivo</span>
                                                                 <input
-                                                                    id="final_payment_proof"
+                                                                    id="payment_proof"
                                                                     type="file"
                                                                     className="sr-only"
                                                                     accept="image/*,application/pdf"
@@ -638,27 +730,46 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                                                             </label>
                                                         </div>
                                                         <p className="text-xs text-gray-500">
-                                                            PNG, JPG, PDF até 2MB
+                                                            PNG, JPG, PDF até 5MB
                                                         </p>
                                                     </>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Notes */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            📝 Observações (opcional)
+                                        </label>
+                                        <textarea
+                                            value={data.notes}
+                                            onChange={e => setData('notes', e.target.value)}
+                                            rows={3}
+                                            className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
+                                            placeholder="Adicione qualquer observação sobre este pagamento..."
+                                            maxLength={1000}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {data.notes?.length || 0}/1000 caracteres
+                                        </p>
+                                    </div>
+
                                     <div className="flex gap-4">
                                         <button
                                             type="button"
                                             onClick={() => setShowPaymentForm(false)}
-                                            className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                                            className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                                         >
                                             Cancelar
                                         </button>
                                         <button
                                             type="submit"
-                                            disabled={processing || !data.final_payment_proof}
-                                            className="flex-1 bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={processing || !data.payment_proof || !data.amount}
+                                            className="flex-1 bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                                         >
-                                            {processing ? 'Enviando...' : 'Enviar Comprovante'}
+                                            {processing ? 'Enviando...' : 'Enviar Pagamento'}
                                         </button>
                                     </div>
                                 </form>
