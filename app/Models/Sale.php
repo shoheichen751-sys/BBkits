@@ -560,6 +560,11 @@ class Sale extends Model
 
     public function meetsMinimumPaymentForProduction(): bool
     {
+        // If already payment_approved, finance already validated payment
+        if ($this->order_status === 'payment_approved') {
+            return true;
+        }
+
         $totalOrderAmount = $this->total_amount + ($this->shipping_amount ?? 0);
         $minimumRequired = $totalOrderAmount * 0.5; // 50% minimum
         $paidAmount = $this->getTotalPaidAmount();
