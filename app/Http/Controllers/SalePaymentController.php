@@ -26,28 +26,11 @@ class SalePaymentController extends Controller
             ->where('status', 'pending')
             ->sum('amount');
 
-        $remainingAmount = max(0, $totalWithShipping - $approvedPaidAmount);
+        // For admin display, show remaining amount after all payments (approved + pending)
+        // This matches the client-side calculation
+        $totalPaidByClient = $approvedPaidAmount + $pendingAmount;
+        $remainingAmount = max(0, $totalWithShipping - $totalPaidByClient);
 
-        // Debug logging to compare with client page
-        \Log::info('ADMIN PAYMENTS PAGE DEBUG', [
-            'sale_id' => $sale->id,
-            'unique_token' => $sale->unique_token,
-            'total_amount' => $sale->total_amount,
-            'shipping_amount' => $sale->shipping_amount,
-            'totalWithShipping' => $totalWithShipping,
-            'approvedPaidAmount' => $approvedPaidAmount,
-            'pendingAmount' => $pendingAmount,
-            'remainingAmount' => $remainingAmount,
-            'payments_count' => $payments->count(),
-            'all_payments' => $payments->map(function($p) {
-                return [
-                    'id' => $p->id,
-                    'amount' => $p->amount,
-                    'status' => $p->status,
-                    'payment_date' => $p->payment_date
-                ];
-            })
-        ]);
         
         // Calculate progress and status based on approved payments only
         $progress = $totalWithShipping > 0 ? ($approvedPaidAmount / $totalWithShipping) * 100 : 0;

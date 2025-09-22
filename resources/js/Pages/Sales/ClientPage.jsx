@@ -3,7 +3,7 @@ import { Head, useForm, router } from '@inertiajs/react';
 import toast from 'react-hot-toast';
 import { formatBRL } from '@/utils/currency';
 
-export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAmount, remainingAmount, pendingAmount, totalAmount, needsFinalPayment, productPhotoUrl, debug }) {
+export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAmount, remainingAmount, pendingAmount, totalAmount, needsFinalPayment, productPhotoUrl }) {
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const [showAddressForm, setShowAddressForm] = useState(!sale.delivery_address);
     const [paymentPreview, setPaymentPreview] = useState(null);
@@ -543,24 +543,6 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                         {/* Financial Summary */}
                         <div className="border-t pt-4">
                             <h4 className="text-md font-semibold text-gray-800 mb-4">💰 Resumo Financeiro:</h4>
-                            {/* Debug info - temporary */}
-                            {debug && (
-                                <div className="bg-yellow-100 border border-yellow-400 rounded p-3 mb-4">
-                                    <h5 className="font-bold text-yellow-800 mb-2">🐛 Debug Info:</h5>
-                                    <div className="text-xs text-yellow-800 space-y-1">
-                                        <div>Sale ID: {debug.sale_id}</div>
-                                        <div>Total Amount: {debug.total_amount}</div>
-                                        <div>Shipping: {debug.shipping_amount}</div>
-                                        <div>Total with Shipping: {debug.totalWithShipping}</div>
-                                        <div>Approved Paid: {debug.approvedPaidAmount}</div>
-                                        <div>Total Paid by Client: {debug.totalPaidByClient}</div>
-                                        <div>Pending: {debug.pendingAmount}</div>
-                                        <div>Remaining: {debug.remainingAmount}</div>
-                                        <div>Payments Count: {debug.payments_count}</div>
-                                        <div>Method: {debug.calculation_method}</div>
-                                    </div>
-                                </div>
-                            )}
 
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
@@ -663,7 +645,6 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                                                 type="number"
                                                 step="0.01"
                                                 min="0.01"
-                                                max={remainingAmount}
                                                 value={data.amount}
                                                 onChange={e => setData('amount', e.target.value)}
                                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500"
@@ -672,7 +653,7 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                                             />
                                         </div>
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Valor restante: {formatBRL(remainingAmount)}
+                                            Valor restante: {formatBRL(remainingAmount)} (você pode pagar mais se desejar)
                                         </p>
                                         {errors.amount && (
                                             <p className="text-red-600 text-sm mt-1">{errors.amount}</p>

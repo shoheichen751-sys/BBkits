@@ -20,7 +20,7 @@ export default function PaymentHistory({ sale, payments, onAddPayment, paymentSu
     };
 
     const handleApprove = (payment) => {
-        put(route('payments.approve', payment.id));
+        put(`/payments/${payment.id}/approve`);
     };
 
     const handleReject = (payment) => {
@@ -30,7 +30,7 @@ export default function PaymentHistory({ sale, payments, onAddPayment, paymentSu
 
     const submitRejection = (e) => {
         e.preventDefault();
-        put(route('payments.reject', selectedPayment.id), {
+        put(`/payments/${selectedPayment.id}/reject`, {
             onSuccess: () => {
                 reset();
                 setShowRejectModal(false);
@@ -41,7 +41,7 @@ export default function PaymentHistory({ sale, payments, onAddPayment, paymentSu
 
     const handleDelete = (payment) => {
         if (confirm('Tem certeza que deseja excluir este pagamento?')) {
-            router.delete(route('payments.destroy', payment.id));
+            router.delete(`/payments/${payment.id}`);
         }
     };
 

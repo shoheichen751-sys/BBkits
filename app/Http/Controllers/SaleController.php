@@ -991,36 +991,6 @@ class SaleController extends Controller
         $totalPaidByClient = $approvedPaidAmount + $pendingAmount;
         $remainingAmount = max(0, $totalWithShipping - $totalPaidByClient);
 
-        // Debug logging for specific tokens
-        if (in_array($token, ['BBKNFQQ1DH', 'BBHATSAMMM'])) {
-            \Log::info('CLIENT PAGE DEBUG for ' . $token, [
-                'sale_id' => $sale->id,
-                'total_amount' => $sale->total_amount,
-                'shipping_amount' => $sale->shipping_amount,
-                'totalWithShipping' => $totalWithShipping,
-                'approvedPaidAmount' => $approvedPaidAmount,
-                'pendingAmount' => $pendingAmount,
-                'remainingAmount' => $remainingAmount,
-                'payments_count' => $sale->payments->count(),
-                'approved_payments_count' => $sale->approvedPayments()->count(),
-                'pending_payments_count' => $sale->pendingPayments()->count(),
-                'all_payments' => $sale->payments->map(function($p) {
-                    return [
-                        'id' => $p->id,
-                        'amount' => $p->amount,
-                        'status' => $p->status,
-                        'payment_date' => $p->payment_date
-                    ];
-                })
-            ]);
-
-            \Log::info('PROPS PASSED TO CLIENT PAGE for ' . $token, [
-                'paidAmount' => $approvedPaidAmount,
-                'remainingAmount' => $remainingAmount,
-                'pendingAmount' => $pendingAmount,
-                'totalAmount' => $totalWithShipping,
-            ]);
-        }
 
         return Inertia::render('Sales/ClientPage', [
             'sale' => $sale->load([
@@ -1038,20 +1008,7 @@ class SaleController extends Controller
             'pendingAmount' => $pendingAmount,
             'totalAmount' => $totalWithShipping,
             'needsFinalPayment' => $remainingAmount > 0,
-            'productPhotoUrl' => $sale->getProductPhotoUrl(),
-            // Temporary debug info to see what's happening
-            'debug' => [
-                'sale_id' => $sale->id,
-                'total_amount' => $sale->total_amount,
-                'shipping_amount' => $sale->shipping_amount,
-                'totalWithShipping' => $totalWithShipping,
-                'approvedPaidAmount' => $approvedPaidAmount,
-                'totalPaidByClient' => $totalPaidByClient,
-                'pendingAmount' => $pendingAmount,
-                'remainingAmount' => $remainingAmount,
-                'payments_count' => $sale->payments->count(),
-                'calculation_method' => 'direct_query'
-            ]
+            'productPhotoUrl' => $sale->getProductPhotoUrl()
         ]);
     }
 
@@ -1086,13 +1043,8 @@ class SaleController extends Controller
             'notes' => 'nullable|string|max:1000'
         ]);
 
-        // Check if payment amount doesn't exceed remaining amount
-        $remainingAmount = max(0, ($sale->total_amount + $sale->shipping_amount) - $sale->approvedPayments()->sum('amount'));
-        if ($validated['amount'] > $remainingAmount) {
-            return back()->withErrors([
-                'amount' => "O valor do pagamento (R$ " . number_format($validated['amount'], 2, ',', '.') . ") não pode ser maior que o valor restante (R$ " . number_format($remainingAmount, 2, ',', '.') . ")"
-            ]);
-        }
+        // Allow overpayments - customers can pay more than remaining amount
+        // Validation: just ensure it's a positive amount
 
         // Store payment receipt
         $receiptPath = null;
