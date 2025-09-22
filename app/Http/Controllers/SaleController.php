@@ -970,12 +970,47 @@ class SaleController extends Controller
     public function clientPage($token)
     {
         $sale = Sale::where('unique_token', $token)->firstOrFail();
-        
+
+        // Load payments relationship explicitly
+        $sale->load('payments');
+
         // Calculate payment summary using the same logic as admin payment page
-        $totalWithShipping = $sale->total_amount + $sale->shipping_amount;
-        $approvedPaidAmount = $sale->approvedPayments()->sum('amount');
-        $pendingAmount = $sale->pendingPayments()->sum('amount');
+        $totalWithShipping = (float) $sale->total_amount + (float) $sale->shipping_amount;
+
+        // Force fresh queries to ensure no caching issues
+        $approvedPaidAmount = (float) $sale->payments()
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        $pendingAmount = (float) $sale->payments()
+            ->where('status', 'pending')
+            ->sum('amount');
+
         $remainingAmount = max(0, $totalWithShipping - $approvedPaidAmount);
+
+        // Debug logging for token BBKNFQQ1DH
+        if ($token === 'BBKNFQQ1DH') {
+            \Log::info('CLIENT PAGE DEBUG for BBKNFQQ1DH', [
+                'sale_id' => $sale->id,
+                'total_amount' => $sale->total_amount,
+                'shipping_amount' => $sale->shipping_amount,
+                'totalWithShipping' => $totalWithShipping,
+                'approvedPaidAmount' => $approvedPaidAmount,
+                'pendingAmount' => $pendingAmount,
+                'remainingAmount' => $remainingAmount,
+                'payments_count' => $sale->payments->count(),
+                'approved_payments_count' => $sale->approvedPayments()->count(),
+                'pending_payments_count' => $sale->pendingPayments()->count(),
+                'all_payments' => $sale->payments->map(function($p) {
+                    return [
+                        'id' => $p->id,
+                        'amount' => $p->amount,
+                        'status' => $p->status,
+                        'payment_date' => $p->payment_date
+                    ];
+                })
+            ]);
+        }
 
         return Inertia::render('Sales/ClientPage', [
             'sale' => $sale->load([

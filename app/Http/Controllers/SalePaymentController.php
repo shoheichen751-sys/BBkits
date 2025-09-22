@@ -13,12 +13,33 @@ class SalePaymentController extends Controller
     public function index(Sale $sale)
     {
         $payments = $sale->payments()->with('approvedBy')->orderBy('payment_date', 'desc')->get();
-        
+
         // Calculate payment summary using ONLY payment records (not legacy received_amount)
         $totalWithShipping = $sale->total_amount + $sale->shipping_amount;
         $approvedPaidAmount = $sale->approvedPayments()->sum('amount');
         $pendingAmount = $sale->pendingPayments()->sum('amount');
         $remainingAmount = max(0, $totalWithShipping - $approvedPaidAmount);
+
+        // Debug logging to compare with client page
+        \Log::info('ADMIN PAYMENTS PAGE DEBUG', [
+            'sale_id' => $sale->id,
+            'unique_token' => $sale->unique_token,
+            'total_amount' => $sale->total_amount,
+            'shipping_amount' => $sale->shipping_amount,
+            'totalWithShipping' => $totalWithShipping,
+            'approvedPaidAmount' => $approvedPaidAmount,
+            'pendingAmount' => $pendingAmount,
+            'remainingAmount' => $remainingAmount,
+            'payments_count' => $payments->count(),
+            'all_payments' => $payments->map(function($p) {
+                return [
+                    'id' => $p->id,
+                    'amount' => $p->amount,
+                    'status' => $p->status,
+                    'payment_date' => $p->payment_date
+                ];
+            })
+        ]);
         
         // Calculate progress and status based on approved payments only
         $progress = $totalWithShipping > 0 ? ($approvedPaidAmount / $totalWithShipping) * 100 : 0;

@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { formatBRL } from '@/utils/currency';
 import toast from 'react-hot-toast';
 import { Package, X } from 'lucide-react';
 
-export default function OrdersIndex({ orders, statusFilter }) {
+export default function OrdersIndex({ orders, statusFilter, tabCounts }) {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('view'); // 'view', 'photo', 'shipping'
     const [photoPreview, setPhotoPreview] = useState(null);
-    const [currentOrders, setCurrentOrders] = useState(orders.data || []);
 
     
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -21,18 +20,6 @@ export default function OrdersIndex({ orders, statusFilter }) {
     });
 
     // Update currentOrders when orders prop changes
-    useEffect(() => {
-        setCurrentOrders(orders.data || []);
-    }, [orders.data]);
-
-    // Function to update order status locally for immediate UI feedback
-    const updateOrderStatus = (orderId, newStatus) => {
-        setCurrentOrders(prevOrders =>
-            prevOrders.map(order =>
-                order.id === orderId ? { ...order, order_status: newStatus } : order
-            )
-        );
-    };
 
 
     const handleOrderClick = (event, order) => {
@@ -67,8 +54,6 @@ export default function OrdersIndex({ orders, statusFilter }) {
             onSuccess: () => {
                 toast.success('🏭 Produção iniciada com sucesso!');
                 setShowModal(false);
-                // Update order status locally for immediate UI feedback
-                updateOrderStatus(order.id, 'in_production');
                 // Redirect to in_production tab to show the order's new location
                 router.get('/production/orders?status=in_production');
             },
@@ -100,8 +85,6 @@ export default function OrdersIndex({ orders, statusFilter }) {
             onSuccess: () => {
                 toast.success('📸 Foto enviada para aprovação!');
                 setShowModal(false);
-                // Update order status locally for immediate UI feedback
-                updateOrderStatus(selectedOrder.id, 'photo_sent');
                 // Redirect to photo_sent tab to show the order's new location
                 router.get('/production/orders?status=photo_sent');
             }
@@ -112,8 +95,6 @@ export default function OrdersIndex({ orders, statusFilter }) {
         post(`/production/orders/${order.id}/generate-shipping`, {
             onSuccess: () => {
                 toast.success('🚚 Etiqueta de envio gerada!');
-                // Update order status locally for immediate UI feedback
-                updateOrderStatus(order.id, 'shipped');
                 // Redirect to show all orders or shipped orders depending on implementation
                 router.get('/production/orders');
             },
@@ -297,13 +278,15 @@ export default function OrdersIndex({ orders, statusFilter }) {
         return new Date(date).toLocaleDateString('pt-BR');
     };
 
-    const statusCounts = {
-        payment_approved: currentOrders.filter(o => o.order_status === 'payment_approved').length || 0,
-        in_production: currentOrders.filter(o => o.order_status === 'in_production').length || 0,
-        photo_sent: currentOrders.filter(o => o.order_status === 'photo_sent').length || 0,
-        photo_approved: currentOrders.filter(o => o.order_status === 'photo_approved').length || 0,
-        pending_final_payment: currentOrders.filter(o => o.order_status === 'pending_final_payment').length || 0,
-        ready_for_shipping: currentOrders.filter(o => o.order_status === 'ready_for_shipping').length || 0
+    // Use server-provided tab counts instead of calculating from current page data
+    const statusCounts = tabCounts || {
+        payment_approved: 0,
+        in_production: 0,
+        photo_sent: 0,
+        photo_approved: 0,
+        pending_final_payment: 0,
+        ready_for_shipping: 0,
+        all: 0
     };
 
     return (
@@ -336,7 +319,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                         }`}
                                     >
-                                        Todos ({orders.total || 0})
+                                        Todos ({statusCounts.all})
                                     </Link>
                                     <Link
                                         href="/production/orders?status=payment_approved"

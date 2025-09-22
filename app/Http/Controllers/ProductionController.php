@@ -62,9 +62,23 @@ class ProductionController extends Controller
         
         $orders = $query->latest()->paginate(15)->withQueryString();
 
+        // Calculate counts for all tabs to display in navigation
+        $tabCounts = [
+            'payment_approved' => Sale::where('order_status', 'payment_approved')->count(),
+            'in_production' => Sale::where('order_status', 'in_production')->count(),
+            'photo_sent' => Sale::where('order_status', 'photo_sent')->count(),
+            'photo_approved' => Sale::where('order_status', 'photo_approved')->count(),
+            'pending_final_payment' => Sale::where('order_status', 'pending_final_payment')->count(),
+            'ready_for_shipping' => Sale::where('order_status', 'ready_for_shipping')->count(),
+        ];
+
+        // Calculate total for 'all' tab
+        $tabCounts['all'] = array_sum($tabCounts);
+
         return Inertia::render('Production/OrdersIndex', [
             'orders' => $orders,
-            'statusFilter' => $statusFilter
+            'statusFilter' => $statusFilter,
+            'tabCounts' => $tabCounts
         ]);
     }
 
