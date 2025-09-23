@@ -112,13 +112,9 @@ export default function OrdersIndex({ orders, statusFilter, tabCounts }) {
         post(`/production/orders/${order.id}/process-photo-approved`, {
             onSuccess: () => {
                 toast.success('✨ Pedido processado com sucesso!');
-                // Get the updated order status from the response or check if order needs final payment
-                const totalAmount = parseFloat(order.total_amount_with_shipping || 0);
-                const approvedPayments = order.payments ? order.payments.filter(p => p.status === 'approved') : [];
-                const paidAmount = approvedPayments.length > 0
-                    ? approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0)
-                    : parseFloat(order.total_paid_amount || 0);
-                const needsFinalPayment = paidAmount < totalAmount;
+                // Use unified payment values
+                const remainingAmount = parseFloat(order.remaining_amount || 0);
+                const needsFinalPayment = remainingAmount > 0;
 
                 // Redirect to the appropriate tab based on payment status
                 if (needsFinalPayment) {
@@ -256,10 +252,8 @@ export default function OrdersIndex({ orders, statusFilter, tabCounts }) {
 
     // Helper function to get financial summary for an order
     const getFinancialSummary = (order) => {
+        // Use unified payment values from backend
         const totalAmount = parseFloat(order.total_amount_with_shipping || 0);
-        
-        // Fix: Check if there are actual approved payments, not just if payments array exists
-        const approvedPayments = order.payments ? order.payments.filter(p => p.status === 'approved') : [];
         const paidAmount = parseFloat(order.total_paid_amount || 0);
         const pendingAmount = parseFloat(order.total_pending_amount || 0);
         const remainingAmount = parseFloat(order.remaining_amount || 0);
@@ -434,6 +428,14 @@ export default function OrdersIndex({ orders, statusFilter, tabCounts }) {
                                                                 {formatBRL(financial.paidAmount)}
                                                             </span>
                                                         </div>
+                                                        {financial.pendingAmount > 0 && (
+                                                            <div className="flex justify-between items-center bg-orange-50 px-2 py-1 rounded">
+                                                                <span className="text-xs text-orange-700">⏳ Aguardando Aprovação:</span>
+                                                                <span className="text-xs font-bold text-orange-700">
+                                                                    {formatBRL(financial.pendingAmount)}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         {financial.remainingAmount > 0 && (
                                                             <div className="flex justify-between items-center">
                                                                 <span className="text-sm text-gray-600">Restante:</span>
@@ -613,6 +615,21 @@ export default function OrdersIndex({ orders, statusFilter, tabCounts }) {
                                                                 {formatBRL(financial.paidAmount)}
                                                             </span>
                                                         </div>
+                                                        {financial.pendingAmount > 0 && (
+                                                            <div className="mt-2 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-sm font-medium text-orange-800">
+                                                                        ⏳ Pagamento Aguardando Aprovação
+                                                                    </span>
+                                                                    <span className="font-bold text-orange-700">
+                                                                        {formatBRL(financial.pendingAmount)}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-xs text-orange-600 mt-1">
+                                                                    Cliente enviou comprovante - aguardando verificação
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                         {financial.remainingAmount > 0 && (
                                                             <div className="flex justify-between items-center">
                                                                 <label className="text-sm font-medium text-gray-600">Valor Restante:</label>

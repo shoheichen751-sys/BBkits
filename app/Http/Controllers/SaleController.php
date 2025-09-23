@@ -198,7 +198,20 @@ class SaleController extends Controller
         }
 
         $sale = Sale::create($validated);
-        
+
+        // Create initial payment record if there's a received amount
+        if (isset($validated['received_amount']) && $validated['received_amount'] > 0) {
+            \App\Models\SalePayment::create([
+                'sale_id' => $sale->id,
+                'amount' => $validated['received_amount'],
+                'payment_date' => $validated['payment_date'],
+                'payment_method' => $validated['payment_method'],
+                'status' => 'pending', // Will be approved by admin/finance
+                'proof_data' => $validated['receipt_data'] ?? null,
+                'notes' => 'Pagamento inicial registrado na criação da venda',
+            ]);
+        }
+
         $this->notificationService->notifyNewSale($sale);
 
         // Send WhatsApp order confirmation automatically

@@ -34,11 +34,25 @@ export default function OrdersIndex({ orders, statusFilter }) {
     };
 
     const handleApprove = () => {
+        console.log('Approving order:', selectedOrder);
+        console.log('Order ID:', selectedOrder?.id);
+        console.log('Order status:', selectedOrder?.order_status);
+
         post(`/finance/orders/${selectedOrder.id}/approve`, {
             onSuccess: () => {
                 toast.success('Pedido aprovado com sucesso!');
                 setShowModal(false);
                 reset();
+            },
+            onError: (errors) => {
+                console.error('Approval error:', errors);
+                if (errors.error) {
+                    toast.error(errors.error);
+                } else if (errors.message) {
+                    toast.error(errors.message);
+                } else {
+                    toast.error('Erro ao aprovar pedido. Verifique o console para detalhes.');
+                }
             }
         });
     };
@@ -55,6 +69,16 @@ export default function OrdersIndex({ orders, statusFilter }) {
                 toast.success('Pedido rejeitado');
                 setShowModal(false);
                 reset();
+            },
+            onError: (errors) => {
+                console.error('Rejection error:', errors);
+                if (errors.error) {
+                    toast.error(errors.error);
+                } else if (errors.message) {
+                    toast.error(errors.message);
+                } else {
+                    toast.error('Erro ao rejeitar pedido. Verifique o console para detalhes.');
+                }
             }
         });
     };

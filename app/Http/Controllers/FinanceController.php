@@ -61,7 +61,11 @@ class FinanceController extends Controller
                 // Validate minimum payment requirement (50% rule)
                 $totalOrderAmount = $sale->total_amount + ($sale->shipping_amount ?? 0);
                 $minimumRequired = $totalOrderAmount * 0.5; // 50% minimum
-                $receivedAmount = (float) ($sale->received_amount ?? 0);
+
+                // Use new payment system - count approved + pending payments
+                $approvedAmount = (float) $sale->payments()->where('status', 'approved')->sum('amount');
+                $pendingAmount = (float) $sale->payments()->where('status', 'pending')->sum('amount');
+                $receivedAmount = $approvedAmount + $pendingAmount;
 
                 if ($receivedAmount < $minimumRequired) {
                     DB::rollBack();
@@ -98,11 +102,15 @@ class FinanceController extends Controller
             } elseif ($sale->order_status === 'pending_final_payment') {
                 // Validate final payment completes the order
                 $totalOrderAmount = $sale->total_amount + ($sale->shipping_amount ?? 0);
-                $currentPaidAmount = $sale->getTotalPaidAmount();
 
-                if ($currentPaidAmount < $totalOrderAmount) {
+                // Include pending payments that will be approved
+                $currentPaidAmount = $sale->getTotalPaidAmount();
+                $pendingAmount = (float) $sale->payments()->where('status', 'pending')->sum('amount');
+                $totalAfterApproval = $currentPaidAmount + $pendingAmount;
+
+                if ($totalAfterApproval < $totalOrderAmount) {
                     DB::rollBack();
-                    $remaining = $totalOrderAmount - $currentPaidAmount;
+                    $remaining = $totalOrderAmount - $totalAfterApproval;
                     return back()->withErrors([
                         'error' => sprintf(
                             'Pagamento final insuficiente. Ainda falta: %s para completar o pedido',
