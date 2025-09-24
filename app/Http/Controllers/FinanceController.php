@@ -45,7 +45,16 @@ class FinanceController extends Controller
         }
         
         $orders = $query->latest()->get();
-        
+
+        // Add unified payment calculations to each order
+        $orders->transform(function ($order) {
+            $order->total_amount_with_shipping = $order->getTotalAmount();
+            $order->total_paid_amount = $order->getTotalPaidAmount();
+            $order->total_pending_amount = $order->getTotalPendingAmount();
+            $order->remaining_amount = $order->getRemainingAmount();
+            return $order;
+        });
+
         return Inertia::render('Finance/OrdersIndex', [
             'orders' => $orders,
             'statusFilter' => $statusFilter

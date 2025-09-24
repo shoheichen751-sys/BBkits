@@ -837,6 +837,89 @@ export default function Show({ sale }) {
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* Embroidery Information */}
+                                            {sale.embroidery_type && (
+                                                <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <span className="text-purple-500 text-2xl">✨</span>
+                                                        <h4 className="font-bold text-purple-800">Informações do Bordado</h4>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {sale.embroidery_type && (
+                                                            <div>
+                                                                <dt className="text-sm text-purple-600 font-medium">Tipo</dt>
+                                                                <dd className="text-base font-semibold text-purple-800 capitalize">
+                                                                    {sale.embroidery_type === 'text' ? 'Texto' : sale.embroidery_type === 'design' ? 'Desenho' : 'Texto + Desenho'}
+                                                                </dd>
+                                                            </div>
+                                                        )}
+
+                                                        {sale.embroidery_text && (
+                                                            <div>
+                                                                <dt className="text-sm text-purple-600 font-medium">Texto</dt>
+                                                                <dd className="text-base font-semibold text-purple-800">
+                                                                    "{sale.embroidery_text}"
+                                                                </dd>
+                                                            </div>
+                                                        )}
+
+                                                        {sale.embroidery_position && (
+                                                            <div>
+                                                                <dt className="text-sm text-purple-600 font-medium">Posição</dt>
+                                                                <dd className="text-base font-semibold text-purple-800 capitalize">
+                                                                    {sale.embroidery_position}
+                                                                </dd>
+                                                            </div>
+                                                        )}
+
+                                                        {sale.embroidery_color && (
+                                                            <div>
+                                                                <dt className="text-sm text-purple-600 font-medium">Cor</dt>
+                                                                <dd className="text-base font-semibold text-purple-800 capitalize">
+                                                                    {sale.embroidery_color}
+                                                                </dd>
+                                                            </div>
+                                                        )}
+
+                                                        {sale.embroidery_font && (
+                                                            <div>
+                                                                <dt className="text-sm text-purple-600 font-medium">Fonte</dt>
+                                                                <dd className="text-base font-semibold text-purple-800 capitalize">
+                                                                    {sale.embroidery_font}
+                                                                </dd>
+                                                            </div>
+                                                        )}
+
+                                                        {sale.embroidery_design && (
+                                                            <div>
+                                                                <dt className="text-sm text-purple-600 font-medium">Desenho</dt>
+                                                                <dd className="text-base font-semibold text-purple-800">
+                                                                    {sale.embroidery_design.name}
+                                                                </dd>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Child Name if available */}
+                                            {sale.child_name && (
+                                                <div className="detail-item">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-rose-400 rounded-full flex items-center justify-center text-white font-bold">
+                                                            👶
+                                                        </div>
+                                                        <div>
+                                                            <dt className="text-sm text-gray-500 font-medium">Nome da Criança</dt>
+                                                            <dd className="text-lg font-bold text-gray-900">
+                                                                {sale.child_name}
+                                                            </dd>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

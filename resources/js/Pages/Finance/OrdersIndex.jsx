@@ -249,26 +249,49 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         </div>
 
                                         <div className="border-t pt-4">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm text-gray-600">Valor Total:</span>
-                                                <span className="font-semibold text-gray-900">
-                                                    {formatCurrency(order.total_amount)}
-                                                </span>
+                                            {/* Total Breakdown */}
+                                            <div className="mb-3 p-2 bg-gray-50 rounded">
+                                                <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
+                                                    <span>📦 Produtos:</span>
+                                                    <span>{formatCurrency(order.total_amount || 0)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
+                                                    <span>🚚 Frete:</span>
+                                                    <span>{formatCurrency(order.shipping_amount || 0)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-sm font-bold text-gray-900 pt-1 border-t border-gray-300">
+                                                    <span>Total:</span>
+                                                    <span>{formatCurrency(order.total_amount_with_shipping || 0)}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm text-gray-600">Pago:</span>
-                                                <span className="font-semibold text-green-600">
-                                                    {formatCurrency(order.received_amount)}
-                                                </span>
-                                            </div>
-                                            {(order.total_amount - order.received_amount) > 0 && (
+
+                                            {/* Payment Status */}
+                                            <div className="space-y-1">
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-sm text-gray-600">Restante:</span>
-                                                    <span className="font-semibold text-orange-600">
-                                                        {formatCurrency(order.total_amount - order.received_amount)}
+                                                    <span className="text-sm text-gray-600">✅ Pago:</span>
+                                                    <span className="font-semibold text-green-600">
+                                                        {formatCurrency(order.total_paid_amount || 0)}
                                                     </span>
                                                 </div>
-                                            )}
+
+                                                {(order.total_pending_amount || 0) > 0 && (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-sm text-gray-600">⏳ Pendente:</span>
+                                                        <span className="font-semibold text-orange-600">
+                                                            {formatCurrency(order.total_pending_amount)}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {(order.remaining_amount || 0) > 0 && (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-sm text-gray-600">❌ Restante:</span>
+                                                        <span className="font-semibold text-red-600">
+                                                            {formatCurrency(order.remaining_amount)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {(order.order_status === 'pending_payment' || order.order_status === 'pending_final_payment') && (
@@ -388,33 +411,62 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                                 </div>
                                                 <h4 className="font-semibold text-gray-900">Resumo Financeiro</h4>
                                             </div>
-                                            <div className="space-y-3">
-                                                <div className="flex justify-between items-center py-2 bg-white rounded px-3">
-                                                    <span className="text-sm font-medium text-gray-700">💎 Valor do Produto:</span>
-                                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(selectedOrder.total_amount)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center py-2 bg-white rounded px-3">
-                                                    <span className="text-sm font-medium text-gray-700">🚚 Frete:</span>
-                                                    <span className="text-sm font-semibold text-blue-700">{formatCurrency(selectedOrder.shipping_amount)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center py-2 bg-white rounded px-3">
-                                                    <span className="text-sm font-medium text-gray-700">✅ Valor Pago:</span>
-                                                    <span className="text-sm font-bold text-green-600">{formatCurrency(selectedOrder.received_amount)}</span>
-                                                </div>
-                                                {(selectedOrder.total_amount - selectedOrder.received_amount) > 0 && (
-                                                    <div className="flex justify-between items-center py-2 bg-orange-50 border border-orange-200 rounded px-3">
-                                                        <span className="text-sm font-semibold text-orange-700">⏰ Restante:</span>
-                                                        <span className="text-sm font-bold text-orange-600">
-                                                            {formatCurrency(selectedOrder.total_amount - selectedOrder.received_amount)}
-                                                        </span>
+                                            <div className="space-y-4">
+                                                {/* Total Breakdown - Clear and Detailed */}
+                                                <div className="bg-gray-50 p-4 rounded-lg">
+                                                    <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                                        📊 Composição do Total
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-sm text-gray-600">📦 Produtos:</span>
+                                                            <span className="text-sm font-semibold text-gray-800">{formatCurrency(selectedOrder.total_amount || 0)}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-sm text-gray-600">🚚 Frete:</span>
+                                                            <span className="text-sm font-semibold text-gray-800">{formatCurrency(selectedOrder.shipping_amount || 0)}</span>
+                                                        </div>
+                                                        <div className="border-t border-gray-300 pt-2 mt-2">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-base font-bold text-indigo-800">🎯 TOTAL:</span>
+                                                                <span className="text-base font-bold text-indigo-800">
+                                                                    {formatCurrency(selectedOrder.total_amount_with_shipping || 0)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                )}
-                                                <div className="border-t pt-3 mt-3">
-                                                    <div className="flex justify-between items-center py-2 bg-indigo-50 border border-indigo-200 rounded px-3">
-                                                        <span className="text-base font-bold text-indigo-800">🎯 TOTAL GERAL:</span>
-                                                        <span className="text-base font-bold text-indigo-800">
-                                                            {formatCurrency((selectedOrder.total_amount || 0) + (selectedOrder.shipping_amount || 0))}
-                                                        </span>
+                                                </div>
+
+                                                {/* Payment Status - Clear and Unified */}
+                                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                                    <h4 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                                                        💰 Status dos Pagamentos
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-center py-1">
+                                                            <span className="text-sm text-blue-700">✅ Aprovado:</span>
+                                                            <span className="text-sm font-bold text-green-600">{formatCurrency(selectedOrder.total_paid_amount || 0)}</span>
+                                                        </div>
+
+                                                        {(selectedOrder.total_pending_amount || 0) > 0 && (
+                                                            <div className="flex justify-between items-center py-1">
+                                                                <span className="text-sm text-blue-700">⏳ Aguardando Aprovação:</span>
+                                                                <span className="text-sm font-bold text-orange-600">{formatCurrency(selectedOrder.total_pending_amount)}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {(selectedOrder.remaining_amount || 0) > 0 && (
+                                                            <div className="flex justify-between items-center py-1">
+                                                                <span className="text-sm text-blue-700">❌ Ainda Falta:</span>
+                                                                <span className="text-sm font-bold text-red-600">{formatCurrency(selectedOrder.remaining_amount)}</span>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="border-t border-blue-200 pt-2 mt-2">
+                                                            <div className="text-xs text-blue-600 text-center">
+                                                                ✓ Aprovado + Pendente + Restante = {formatCurrency(selectedOrder.total_amount_with_shipping || 0)}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

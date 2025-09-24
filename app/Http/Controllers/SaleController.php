@@ -440,10 +440,12 @@ class SaleController extends Controller
         
         return Inertia::render('Sales/Show', [
             'sale' => $sale->load([
-                'user', 
-                'approvedBy', 
+                'user',
+                'approvedBy',
                 'rejectedBy',
                 'productCategory',
+                'embroideryDesign',
+                // Load legacy sale_products if they exist (for multi-product sales)
                 'saleProducts.product',
                 'saleProducts.embroideryFont',
                 'saleProducts.embroideryColor'
