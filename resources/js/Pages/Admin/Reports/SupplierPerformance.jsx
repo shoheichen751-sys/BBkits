@@ -162,7 +162,7 @@ export default function SupplierPerformance({ supplierMetrics, topSuppliers, sup
                         </div>
                         <div className="p-6">
                             <div className="space-y-4">
-                                {topSuppliers.map((supplier, index) => (
+                                {Array.isArray(topSuppliers) ? topSuppliers.map((supplier, index) => (
                                     <div key={supplier.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                         <div className="flex items-center space-x-4">
                                             <div className="flex-shrink-0">
@@ -190,13 +190,17 @@ export default function SupplierPerformance({ supplierMetrics, topSuppliers, sup
                                             </span>
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-500">Nenhum fornecedor encontrado</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     {/* Suppliers Needing Attention */}
-                    {suppliersNeedingAttention.length > 0 && (
+                    {Array.isArray(suppliersNeedingAttention) && suppliersNeedingAttention.length > 0 && (
                         <div className="bg-white shadow rounded-lg border-l-4 border-red-400">
                             <div className="px-6 py-4 border-b border-gray-200">
                                 <h3 className="text-lg font-medium text-gray-900">⚠️ Fornecedores que Precisam de Atenção</h3>
@@ -311,7 +315,7 @@ export default function SupplierPerformance({ supplierMetrics, topSuppliers, sup
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {supplierMetrics.map((supplier) => (
+                                {Array.isArray(supplierMetrics) ? supplierMetrics.map((supplier) => (
                                     <tr key={supplier.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div>
@@ -360,7 +364,13 @@ export default function SupplierPerformance({ supplierMetrics, topSuppliers, sup
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
+                                )) : (
+                                    <tr>
+                                        <td colSpan="7" className="text-center py-8">
+                                            <p className="text-gray-500">Nenhum fornecedor encontrado</p>
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

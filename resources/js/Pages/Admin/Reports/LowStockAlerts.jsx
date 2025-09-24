@@ -303,13 +303,13 @@ export default function LowStockAlerts({ materials, suppliers, filters, stats })
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <Link
-                                                    href={route('admin.materials.show', material.id)}
+                                                    href={route('admin.materials.show', {material: material.id})}
                                                     className="text-purple-600 hover:text-purple-900 mr-3"
                                                 >
                                                     Ver Detalhes
                                                 </Link>
                                                 <Link
-                                                    href={route('admin.materials.edit', material.id)}
+                                                    href={route('admin.materials.edit', {material: material.id})}
                                                     className="text-indigo-600 hover:text-indigo-900"
                                                 >
                                                     Ajustar Estoque
