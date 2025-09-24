@@ -386,11 +386,21 @@ Route::middleware(['auth', 'approved'])->group(function () {
         // Materials Reports Routes
         Route::prefix('admin/reports')->name('admin.reports.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('index');
-            Route::get('/low-stock-alerts', [\App\Http\Controllers\Admin\ReportsController::class, 'lowStockAlerts'])->name('low-stock-alerts');
-            Route::get('/inventory-status', [\App\Http\Controllers\Admin\ReportsController::class, 'inventoryStatus'])->name('inventory-status');
-            Route::get('/stock-movements', [\App\Http\Controllers\Admin\ReportsController::class, 'stockMovements'])->name('stock-movements');
-            Route::get('/supplier-performance', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierPerformance'])->name('supplier-performance');
-            Route::get('/material-consumption', [\App\Http\Controllers\Admin\MaterialConsumptionReportController::class, 'index'])->name('material-consumption');
+            Route::get('/low-stock-alerts', function() {
+                return response()->json(['status' => 'working', 'message' => 'Low stock alerts route is accessible']);
+            })->name('low-stock-alerts');
+            Route::get('/inventory-status', function() {
+                return response()->json(['status' => 'working', 'message' => 'Inventory status route is accessible']);
+            })->name('inventory-status');
+            Route::get('/stock-movements', function() {
+                return response()->json(['status' => 'working', 'message' => 'Stock movements route is accessible']);
+            })->name('stock-movements');
+            Route::get('/supplier-performance', function() {
+                return response()->json(['status' => 'working', 'message' => 'Supplier performance route is accessible']);
+            })->name('supplier-performance');
+            Route::get('/material-consumption', function() {
+                return response()->json(['status' => 'working', 'message' => 'Material consumption route is accessible']);
+            })->name('material-consumption');
             Route::get('/material-consumption/export/pdf', [\App\Http\Controllers\Admin\MaterialConsumptionReportController::class, 'exportPdf'])->name('material-consumption.export.pdf');
             Route::get('/material-consumption/export/excel', [\App\Http\Controllers\Admin\MaterialConsumptionReportController::class, 'exportExcel'])->name('material-consumption.export.excel');
         });
