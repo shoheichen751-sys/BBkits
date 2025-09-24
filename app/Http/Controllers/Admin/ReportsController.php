@@ -233,6 +233,28 @@ class ReportsController extends Controller
                 'type' => $type,
             ],
         ]);
+        } catch (\Exception $e) {
+            \Log::error('Stock Movements Report Error: ' . $e->getMessage());
+            return Inertia::render('Admin/Reports/StockMovements', [
+                'transactions' => collect([]),
+                'summaryStats' => [
+                    'total_transactions' => 0,
+                    'total_positive_movements' => 0,
+                    'total_negative_movements' => 0,
+                    'net_movement' => 0,
+                ],
+                'dailyMovements' => [],
+                'movementsByType' => [],
+                'materials' => collect([]),
+                'filters' => [
+                    'date_from' => $dateFrom,
+                    'date_to' => $dateTo,
+                    'material_id' => $materialId,
+                    'type' => $type,
+                ],
+                'error_message' => 'Unable to load stock movements. Please check the system logs.'
+            ]);
+        }
     }
 
     public function supplierPerformance(Request $request)
@@ -311,6 +333,26 @@ class ReportsController extends Controller
                 'total_stock_value' => $supplierMetrics->sum('total_stock_value'),
             ],
         ]);
+        } catch (\Exception $e) {
+            \Log::error('Supplier Performance Report Error: ' . $e->getMessage());
+            return Inertia::render('Admin/Reports/SupplierPerformance', [
+                'supplierMetrics' => collect([]),
+                'topSuppliers' => collect([]),
+                'suppliersNeedingAttention' => collect([]),
+                'purchaseActivity' => [],
+                'filters' => [
+                    'date_from' => $dateFrom,
+                    'date_to' => $dateTo,
+                ],
+                'summaryStats' => [
+                    'total_suppliers' => 0,
+                    'active_suppliers' => 0,
+                    'avg_performance_score' => 0,
+                    'total_stock_value' => 0,
+                ],
+                'error_message' => 'Unable to load supplier performance data. Please check the system logs.'
+            ]);
+        }
     }
 
     private function getQuickStats()
