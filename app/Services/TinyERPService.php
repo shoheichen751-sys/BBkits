@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Cache;
 
 class TinyERPService
 {
-    private string $baseUrl;
-    private string $token;
+    private ?string $baseUrl;
+    private ?string $token;
     private PendingRequest $client;
 
     public function __construct()
@@ -32,6 +32,10 @@ class TinyERPService
     private function makeRequest(string $endpoint, array $data = [], string $method = 'POST'): array
     {
         try {
+            if (!$this->token) {
+                throw new \Exception('Tiny ERP token not configured');
+            }
+
             $data['token'] = $this->token;
             $data['formato'] = 'JSON';
 
