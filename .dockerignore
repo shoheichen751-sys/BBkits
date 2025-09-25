@@ -1,6 +1,10 @@
 node_modules
 vendor
-storage
+storage/app/public/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
 .env
 .git
 .gitignore
@@ -8,3 +12,10 @@ Dockerfile
 docker-compose.yml
 README.md
 *.log
+
+# Explicitly include critical files
+!public/index.php
+!server.php
+!public/.htaccess
+!public/robots.txt
+!public/favicon.ico
