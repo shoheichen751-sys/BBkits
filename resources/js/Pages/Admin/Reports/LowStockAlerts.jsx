@@ -343,18 +343,30 @@ export default function LowStockAlerts({ materials, suppliers, filters, stats })
                                         Mostrando {materials.from} a {materials.to} de {materials.total} resultados
                                     </div>
                                     <div className="flex space-x-1">
-                                        {materials.links.map((link, index) => (
-                                            <Link
-                                                key={index}
-                                                href={link.url}
-                                                className={`px-3 py-2 text-sm ${
-                                                    link.active
-                                                        ? 'bg-purple-500 text-white'
-                                                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                                                } border border-gray-300 rounded`}
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                            />
-                                        ))}
+                                        {materials.links.map((link, index) =>
+                                            link.url ? (
+                                                <Link
+                                                    key={index}
+                                                    href={link.url}
+                                                    className={`px-3 py-2 text-sm ${
+                                                        link.active
+                                                            ? 'bg-purple-500 text-white'
+                                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                    } border border-gray-300 rounded`}
+                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                />
+                                            ) : (
+                                                <span
+                                                    key={index}
+                                                    className={`px-3 py-2 text-sm ${
+                                                        link.active
+                                                            ? 'bg-purple-500 text-white'
+                                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    } border border-gray-300 rounded`}
+                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                />
+                                            )
+                                        )}
                                     </div>
                                 </div>
                             </div>

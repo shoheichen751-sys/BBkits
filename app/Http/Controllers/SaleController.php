@@ -17,17 +17,25 @@ use Inertia\Inertia;
 use App\Services\PDFReportService;
 use App\Services\NotificationService;
 use App\Services\CommissionService;
+use App\Services\ActionHistoryService;
 use App\Jobs\ProcessSaleApproval;
+use App\Events\SaleOrderConfirmed;
+use App\Events\SalePaymentApproved;
 
 class SaleController extends Controller
 {
     protected $notificationService;
     protected $commissionService;
+    protected $actionHistoryService;
 
-    public function __construct(NotificationService $notificationService, CommissionService $commissionService)
-    {
+    public function __construct(
+        NotificationService $notificationService,
+        CommissionService $commissionService,
+        ActionHistoryService $actionHistoryService
+    ) {
         $this->notificationService = $notificationService;
         $this->commissionService = $commissionService;
+        $this->actionHistoryService = $actionHistoryService;
     }
 
     public function index()
@@ -390,7 +398,13 @@ class SaleController extends Controller
             }
             
             DB::commit();
-            
+
+            // Fire WhatsApp notification event
+            event(new SaleOrderConfirmed($sale));
+
+            // Log action history
+            $this->actionHistoryService->logSaleCreated($sale);
+
             $this->notificationService->notifyNewSale($sale);
 
             // Send WhatsApp order confirmation automatically
@@ -601,9 +615,15 @@ class SaleController extends Controller
             
             // Create commission record
             $commission = $this->commissionService->createCommissionForSale($sale->fresh());
-            
+
             DB::commit();
-            
+
+            // Fire WhatsApp notification event
+            event(new SalePaymentApproved($sale));
+
+            // Log action history
+            $this->actionHistoryService->logPaymentApproved($sale);
+
             Log::info('Sale approved successfully', [
                 'sale_id' => $sale->id,
                 'approved_by' => auth()->id(),

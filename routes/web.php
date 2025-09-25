@@ -291,6 +291,53 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/admin/integrations/send-whatsapp/{sale}', [\App\Http\Controllers\IntegrationController::class, 'sendWhatsAppMessage'])->name('admin.integrations.send-whatsapp');
         Route::post('/admin/integrations/sync-order/{sale}', [\App\Http\Controllers\IntegrationController::class, 'syncOrderStatus'])->name('admin.integrations.sync-order');
         Route::post('/admin/integrations/bulk-sync', [\App\Http\Controllers\IntegrationController::class, 'bulkSyncOrders'])->name('admin.integrations.bulk-sync');
+
+        // Tiny ERP Integration Routes
+        Route::prefix('admin/tiny-erp')->name('admin.tiny-erp.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'index'])->name('index');
+            Route::post('/test-connection', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'testConnection'])->name('test-connection');
+            Route::post('/sales/{sale}/sync', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'syncSale'])->name('sync-sale');
+            Route::post('/sales/{sale}/generate-invoice', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'generateInvoice'])->name('generate-invoice');
+            Route::post('/sales/{sale}/generate-shipping', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'generateShippingLabel'])->name('generate-shipping');
+            Route::post('/sales/{sale}/update-tracking', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'updateTracking'])->name('update-tracking');
+            Route::post('/bulk-sync', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'bulkSync'])->name('bulk-sync');
+            Route::post('/webhook', [\App\Http\Controllers\Admin\TinyERPIntegrationController::class, 'webhook'])->name('webhook');
+        });
+
+        // WATI WhatsApp Integration Routes
+        Route::prefix('admin/wati')->name('admin.wati.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'index'])->name('index');
+            Route::post('/test-connection', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'testConnection'])->name('test-connection');
+            Route::post('/send-test-message', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'sendTestMessage'])->name('send-test-message');
+            Route::post('/sales/{sale}/send-notification', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'sendManualNotification'])->name('send-notification');
+            Route::get('/notification-logs', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'getNotificationLogs'])->name('notification-logs');
+            Route::post('/notification-logs/{logId}/retry', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'retryNotification'])->name('retry-notification');
+            Route::post('/bulk-send', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'bulkSendNotifications'])->name('bulk-send');
+            Route::get('/templates', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'getMessageTemplates'])->name('templates');
+            Route::get('/contact', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'getContact'])->name('contact');
+            Route::post('/webhook', [\App\Http\Controllers\Admin\WATIIntegrationController::class, 'webhook'])->name('webhook');
+        });
+
+        // Action History Routes
+        Route::prefix('admin/action-history')->name('admin.action-history.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ActionHistoryController::class, 'index'])->name('index');
+            Route::get('/stats', [\App\Http\Controllers\Admin\ActionHistoryController::class, 'stats'])->name('stats');
+            Route::get('/export', [\App\Http\Controllers\Admin\ActionHistoryController::class, 'export'])->name('export');
+            Route::post('/cleanup', [\App\Http\Controllers\Admin\ActionHistoryController::class, 'cleanup'])->name('cleanup');
+            Route::get('/{resourceType}/{resourceId}', [\App\Http\Controllers\Admin\ActionHistoryController::class, 'show'])->name('show');
+        });
+
+        // Backup Management Routes
+        Route::prefix('admin/backups')->name('admin.backups.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('index');
+            Route::post('/create', [\App\Http\Controllers\Admin\BackupController::class, 'create'])->name('create');
+            Route::get('/stats', [\App\Http\Controllers\Admin\BackupController::class, 'stats'])->name('stats');
+            Route::get('/test', [\App\Http\Controllers\Admin\BackupController::class, 'test'])->name('test');
+            Route::post('/cleanup', [\App\Http\Controllers\Admin\BackupController::class, 'cleanup'])->name('cleanup');
+            Route::get('/download/{backupName}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('download');
+            Route::delete('/{backupName}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('delete');
+        });
+
         Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users.index');
         Route::post('/admin/users', [AdminController::class, 'createUser'])->name('admin.users.store');
         Route::put('/admin/users/{user}/approve', [AdminController::class, 'approveUser'])->name('admin.users.approve');

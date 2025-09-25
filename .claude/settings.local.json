@@ -29,7 +29,10 @@
       "Bash(for dir in /home/admin/Documents/Project/BBkits/resources/js/Pages/*/)",
       "Bash(done)",
       "Bash(truncate:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebSearch",
+      "WebFetch(domain:tiny.com.br)",
+      "WebFetch(domain:docs.wati.io)"
     ],
     "deny": [],
     "additionalDirectories": [

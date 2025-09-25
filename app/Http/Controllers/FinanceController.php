@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
+use App\Events\SalePaymentApproved;
+use App\Events\SalePaymentRejected;
+use App\Services\ActionHistoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -10,8 +13,12 @@ use Inertia\Inertia;
 
 class FinanceController extends Controller
 {
-    public function __construct()
+    protected $actionHistoryService;
+
+    public function __construct(ActionHistoryService $actionHistoryService)
     {
+        $this->actionHistoryService = $actionHistoryService;
+
         $this->middleware(function ($request, $next) {
             if (!auth()->user()->canApprovePayments()) {
                 abort(403, 'Unauthorized');
@@ -147,13 +154,19 @@ class FinanceController extends Controller
             }
             
             DB::commit();
-            
+
+            // Fire WhatsApp notification event
+            event(new SalePaymentApproved($sale));
+
+            // Log action history
+            $this->actionHistoryService->logPaymentApproved($sale);
+
             Log::info('Order payment approved', [
                 'order_id' => $sale->id,
                 'approved_by' => auth()->id(),
                 'status' => $sale->order_status
             ]);
-            
+
             // Notify relevant parties
             $notificationService = app(\App\Services\NotificationService::class);
             if ($sale->order_status === 'payment_approved') {
@@ -202,13 +215,19 @@ class FinanceController extends Controller
             }
             
             DB::commit();
-            
+
+            // Fire WhatsApp notification event
+            event(new SalePaymentRejected($sale, $validated['rejection_reason']));
+
+            // Log action history
+            $this->actionHistoryService->logPaymentRejected($sale, $validated['rejection_reason']);
+
             Log::info('Order payment rejected', [
                 'order_id' => $sale->id,
                 'rejected_by' => auth()->id(),
                 'reason' => $validated['rejection_reason']
             ]);
-            
+
             // Notify relevant parties
             $notificationService = app(\App\Services\NotificationService::class);
             $notificationService->notifyPaymentRejected($sale, $validated['rejection_reason']);

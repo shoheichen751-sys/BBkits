@@ -8,11 +8,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use App\Events\SaleProductionStarted;
+use App\Events\SalePhotoSent;
+use App\Events\SaleOrderShipped;
+use App\Services\ActionHistoryService;
 
 class ProductionController extends Controller
 {
-    public function __construct()
+    protected $actionHistoryService;
+
+    public function __construct(ActionHistoryService $actionHistoryService)
     {
+        $this->actionHistoryService = $actionHistoryService;
+
         $this->middleware(function ($request, $next) {
             if (!auth()->user()->canManageProduction()) {
                 abort(403, 'Unauthorized');
@@ -122,7 +130,13 @@ class ProductionController extends Controller
                 'production_admin_id' => auth()->id(),
                 'production_started_at' => now()
             ]);
-            
+
+            // Fire WhatsApp notification event
+            event(new SaleProductionStarted($sale));
+
+            // Log action history
+            $this->actionHistoryService->logProductionStarted($sale);
+
             Log::info('Production started', [
                 'order_id' => $sale->id,
                 'production_admin_id' => auth()->id()
@@ -180,11 +194,17 @@ class ProductionController extends Controller
             
             DB::commit();
             
+            // Fire WhatsApp notification event
+            event(new SalePhotoSent($sale));
+
+            // Log action history
+            $this->actionHistoryService->logPhotoSent($sale);
+
             Log::info('Product photo uploaded', [
                 'order_id' => $sale->id,
                 'production_admin_id' => auth()->id()
             ]);
-            
+
             // Notify client
             $notificationService = app(\App\Services\NotificationService::class);
             $notificationService->notifyPhotoSent($sale);
@@ -229,12 +249,18 @@ class ProductionController extends Controller
                 'shipped_at' => now()
             ]);
             
+            // Fire WhatsApp notification event
+            event(new SaleOrderShipped($sale));
+
+            // Log action history
+            $this->actionHistoryService->logOrderShipped($sale, $trackingCode);
+
             Log::info('Shipping label generated', [
                 'order_id' => $sale->id,
                 'tracking_code' => $trackingCode,
                 'invoice_number' => $invoiceNumber
             ]);
-            
+
             // Notify client
             $notificationService = app(\App\Services\NotificationService::class);
             $notificationService->notifyOrderShipped($sale);
