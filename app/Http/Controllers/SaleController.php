@@ -18,6 +18,7 @@ use App\Services\PDFReportService;
 use App\Services\NotificationService;
 use App\Services\CommissionService;
 use App\Services\ActionHistoryService;
+use App\Services\StockReservationService;
 use App\Jobs\ProcessSaleApproval;
 use App\Events\SaleOrderConfirmed;
 use App\Events\SalePaymentApproved;
@@ -27,15 +28,18 @@ class SaleController extends Controller
     protected $notificationService;
     protected $commissionService;
     protected $actionHistoryService;
+    protected $stockReservationService;
 
     public function __construct(
         NotificationService $notificationService,
         CommissionService $commissionService,
-        ActionHistoryService $actionHistoryService
+        ActionHistoryService $actionHistoryService,
+        StockReservationService $stockReservationService
     ) {
         $this->notificationService = $notificationService;
         $this->commissionService = $commissionService;
         $this->actionHistoryService = $actionHistoryService;
+        $this->stockReservationService = $stockReservationService;
     }
 
     public function index()
@@ -612,9 +616,19 @@ class SaleController extends Controller
                 'finance_admin_id' => auth()->id(),
                 'initial_payment_approved_at' => now()
             ]);
-            
+
             // Create commission record
             $commission = $this->commissionService->createCommissionForSale($sale->fresh());
+
+            // Reserve materials for this sale (soft-lock)
+            $reservationResult = $this->stockReservationService->reserveMaterialsForSale($sale, auth()->id());
+
+            if (!empty($reservationResult['warnings'])) {
+                Log::warning('Stock reservation warnings', [
+                    'sale_id' => $sale->id,
+                    'warnings' => $reservationResult['warnings'],
+                ]);
+            }
 
             DB::commit();
 
@@ -646,7 +660,29 @@ class SaleController extends Controller
             return back()->withErrors(['error' => 'Erro ao aprovar venda. Tente novamente.']);
         }
     }
-    
+
+    /**
+     * Check stock availability for a sale before approval.
+     * Returns shortage warnings if materials are insufficient.
+     */
+    public function checkStock(Sale $sale)
+    {
+        if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'financeiro') {
+            abort(403, 'Unauthorized');
+        }
+
+        $stockCheck = $this->stockReservationService->canReserveSale($sale);
+
+        return response()->json([
+            'can_approve' => $stockCheck['can_reserve'],
+            'has_shortages' => !empty($stockCheck['shortages']),
+            'shortages' => $stockCheck['shortages'],
+            'message' => $stockCheck['can_reserve']
+                ? 'Estoque suficiente para todos os materiais.'
+                : 'Estoque insuficiente para alguns materiais.',
+        ]);
+    }
+
     public function reject(Request $request, Sale $sale)
     {
         if (auth()->user()->role !== 'admin' && auth()->user()->role !== 'financeiro') {
@@ -892,6 +928,20 @@ class SaleController extends Controller
                     'client_name' => $sale->client_name
                 ]);
 
+                // Full cancellation rollback - releases reserved AND restores deducted materials
+                $rollbackResult = app(StockReservationService::class)->fullCancellationRollback(
+                    $sale,
+                    auth()->id(),
+                    'Venda cancelada: ' . $validated['explanation']
+                );
+
+                Log::info('Cancellation rollback completed', [
+                    'sale_id' => $sale->id,
+                    'reserved_released' => count($rollbackResult['reserved_released']),
+                    'deducted_restored' => count($rollbackResult['deducted_restored']),
+                    'transactions_created' => count($rollbackResult['transactions']),
+                ]);
+
                 // Delete the sale record completely
                 $sale->delete();
 
@@ -990,6 +1040,20 @@ class SaleController extends Controller
                 Log::info('About to delete sale', [
                     'sale_id' => $sale->id,
                     'client_name' => $sale->client_name
+                ]);
+
+                // Full cancellation rollback - releases reserved AND restores deducted materials
+                $rollbackResult = app(StockReservationService::class)->fullCancellationRollback(
+                    $sale,
+                    auth()->id(),
+                    'Venda cancelada: ' . $validated['explanation']
+                );
+
+                Log::info('Cancellation rollback completed', [
+                    'sale_id' => $sale->id,
+                    'reserved_released' => count($rollbackResult['reserved_released']),
+                    'deducted_restored' => count($rollbackResult['deducted_restored']),
+                    'transactions_created' => count($rollbackResult['transactions']),
                 ]);
 
                 // Delete the sale record completely

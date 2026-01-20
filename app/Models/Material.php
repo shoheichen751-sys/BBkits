@@ -61,6 +61,32 @@ class Material extends Model
         return $this->hasMany(InventoryTransaction::class);
     }
 
+    public function stockReservations()
+    {
+        return $this->hasMany(StockReservation::class);
+    }
+
+    public function activeReservations()
+    {
+        return $this->hasMany(StockReservation::class)->where('status', 'reserved');
+    }
+
+    /**
+     * Get total reserved quantity for this material.
+     */
+    public function getReservedStockAttribute(): float
+    {
+        return (float) $this->activeReservations()->sum('quantity_reserved');
+    }
+
+    /**
+     * Get available stock (current stock - reserved).
+     */
+    public function getAvailableStockAttribute(): float
+    {
+        return max(0, (float) $this->current_stock - $this->reserved_stock);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

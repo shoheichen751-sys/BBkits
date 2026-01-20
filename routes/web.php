@@ -262,6 +262,7 @@ Route::middleware(['auth', 'approved'])->group(function () {
     Route::middleware('admin')->group(function () {
         Route::get('/admin/sales', [SaleController::class, 'adminIndex'])->name('admin.sales.index');
         Route::post('/admin/sales/{sale}/approve', [SaleController::class, 'approve'])->name('admin.sales.approve');
+        Route::get('/admin/sales/{sale}/check-stock', [SaleController::class, 'checkStock'])->name('admin.sales.check-stock');
         Route::post('/admin/sales/{sale}/reject', [SaleController::class, 'reject'])->name('admin.sales.reject');
         Route::post('/admin/sales/{sale}/approve-queue', [SaleController::class, 'approveWithQueue'])->name('admin.sales.approve.queue');
         Route::post('/admin/sales/{sale}/reject-queue', [SaleController::class, 'rejectWithQueue'])->name('admin.sales.reject.queue');
@@ -424,6 +425,43 @@ Route::middleware(['auth', 'approved'])->group(function () {
         Route::post('/admin/products/{product}/update', [ProductController::class, 'update'])->name('admin.products.update-with-file');
         Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
 
+        // BOM (Bill of Materials) Management Routes
+        Route::prefix('admin/bom')->name('admin.bom.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BOMController::class, 'index'])->name('index');
+            Route::get('/calculator', [\App\Http\Controllers\Admin\BOMController::class, 'calculator'])->name('calculator');
+            Route::get('/products-with-bom', [\App\Http\Controllers\Admin\BOMController::class, 'getProductsWithBOM'])->name('products-with-bom');
+            Route::get('/{product}', [\App\Http\Controllers\Admin\BOMController::class, 'show'])->name('show');
+            Route::post('/{product}', [\App\Http\Controllers\Admin\BOMController::class, 'store'])->name('store');
+            Route::get('/{product}/json', [\App\Http\Controllers\Admin\BOMController::class, 'getBOM'])->name('json');
+
+            // Single item operations
+            Route::post('/{product}/item', [\App\Http\Controllers\Admin\BOMController::class, 'addItem'])->name('item.add');
+            Route::put('/item/{bom}', [\App\Http\Controllers\Admin\BOMController::class, 'updateItem'])->name('item.update');
+            Route::delete('/item/{bom}', [\App\Http\Controllers\Admin\BOMController::class, 'deleteItem'])->name('item.delete');
+
+            // Variant operations
+            Route::post('/item/{bom}/variant', [\App\Http\Controllers\Admin\BOMController::class, 'saveVariant'])->name('variant.save');
+            Route::delete('/variant/{variant}', [\App\Http\Controllers\Admin\BOMController::class, 'deleteVariant'])->name('variant.delete');
+
+            // Duplicate BOM from another product
+            Route::post('/{product}/duplicate', [\App\Http\Controllers\Admin\BOMController::class, 'duplicate'])->name('duplicate');
+
+            // Preview materials for an order
+            Route::post('/preview-materials', [\App\Http\Controllers\Admin\BOMController::class, 'previewMaterials'])->name('preview');
+        });
+
+        // Color Mapping Routes (Product Colors → Material Colors)
+        Route::prefix('admin/color-mapping')->name('admin.color-mapping.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ColorMappingController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\ColorMappingController::class, 'store'])->name('store');
+            Route::post('/bulk', [\App\Http\Controllers\Admin\ColorMappingController::class, 'bulkStore'])->name('bulk-store');
+            Route::post('/copy', [\App\Http\Controllers\Admin\ColorMappingController::class, 'copyMappings'])->name('copy');
+            Route::put('/{mapping}', [\App\Http\Controllers\Admin\ColorMappingController::class, 'update'])->name('update');
+            Route::delete('/{mapping}', [\App\Http\Controllers\Admin\ColorMappingController::class, 'destroy'])->name('destroy');
+            Route::post('/{mapping}/toggle', [\App\Http\Controllers\Admin\ColorMappingController::class, 'toggleActive'])->name('toggle');
+            Route::get('/color/{color}', [\App\Http\Controllers\Admin\ColorMappingController::class, 'getByColor'])->name('by-color');
+        });
+
         // Permission Management Routes
         Route::prefix('admin/permissions')->name('admin.permissions.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('index');
@@ -467,6 +505,10 @@ Route::middleware(['auth', 'approved'])->group(function () {
         // Material Image Routes
         Route::post('/admin/materials/{material}/upload-image', [\App\Http\Controllers\Admin\MaterialsController::class, 'uploadImage'])->name('admin.materials.upload-image');
         Route::delete('/admin/materials/{material}/delete-image', [\App\Http\Controllers\Admin\MaterialsController::class, 'deleteImage'])->name('admin.materials.delete-image');
+
+        // Low Stock Alerts Routes
+        Route::get('/admin/materials/low-stock-alerts', [\App\Http\Controllers\Admin\MaterialsController::class, 'lowStockAlerts'])->name('admin.materials.low-stock-alerts');
+        Route::get('/admin/materials/low-stock-alerts-page', [\App\Http\Controllers\Admin\MaterialsController::class, 'lowStockAlertsPage'])->name('admin.materials.low-stock-alerts-page');
 
         // Material Import/Export Routes
         Route::prefix('admin/materials')->name('admin.materials.')->group(function () {

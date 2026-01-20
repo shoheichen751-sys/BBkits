@@ -96,4 +96,64 @@ class Product extends Model
     {
         return in_array($color, $this->available_colors ?? []);
     }
+
+    /**
+     * Get the BOM (Bill of Materials) entries for this product.
+     */
+    public function bom(): HasMany
+    {
+        return $this->hasMany(ProductBOM::class);
+    }
+
+    /**
+     * Get only active BOM entries.
+     */
+    public function activeBom(): HasMany
+    {
+        return $this->hasMany(ProductBOM::class)->where('is_active', true);
+    }
+
+    /**
+     * Check if this product has a BOM defined.
+     */
+    public function hasBOM(): bool
+    {
+        return $this->bom()->count() > 0;
+    }
+
+    /**
+     * Check if this product has a complete BOM (at least one entry).
+     */
+    public function hasCompleteBOM(): bool
+    {
+        return $this->activeBom()->count() > 0;
+    }
+
+    /**
+     * Calculate all materials needed for a specific size/color combination.
+     * Returns array of [material_id => ['material' => Material, 'quantity' => float, 'unit' => string]]
+     */
+    public function calculateMaterialsNeeded(?string $size = null, ?string $color = null, int $quantity = 1): array
+    {
+        $materials = [];
+
+        foreach ($this->activeBom()->with(['material', 'variants'])->get() as $bomEntry) {
+            $material = $bomEntry->getMaterialFor($color);
+            $qty = $bomEntry->getQuantityFor($size, $color) * $quantity;
+
+            $materialId = $material->id;
+
+            if (isset($materials[$materialId])) {
+                $materials[$materialId]['quantity'] += $qty;
+            } else {
+                $materials[$materialId] = [
+                    'material' => $material,
+                    'quantity' => $qty,
+                    'unit' => $bomEntry->unit,
+                ];
+            }
+        }
+
+        return $materials;
+    }
 }

@@ -25,6 +25,10 @@ export default function AuthenticatedLayout({ header, children }) {
         return ['admin', 'manager', 'production_admin', 'finance_admin', 'financeiro'].includes(user.role);
     };
 
+    const isAdmin = () => {
+        return user.role === 'admin';
+    };
+
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 50);
@@ -842,6 +846,30 @@ export default function AuthenticatedLayout({ header, children }) {
                                                     Transações de Estoque
                                                 </Link>
                                             )}
+                                            {isAdmin() && (
+                                                <Link
+                                                    href="/admin/bom"
+                                                    className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
+                                                >
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                                                        <path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/>
+                                                        <path d="M9 12h6m-6 4h6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                                                    </svg>
+                                                    Fichas Técnicas (BOM)
+                                                </Link>
+                                            )}
+                                            {isAdmin() && (
+                                                <Link
+                                                    href="/admin/color-mapping"
+                                                    className="dropdown-link flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
+                                                >
+                                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                                                    </svg>
+                                                    Mapeamento de Cores
+                                                </Link>
+                                            )}
                                         </DropdownMenu>
                                     )}
                                 </div>
@@ -1273,6 +1301,46 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 />
                                             </svg>
                                             Transações de Estoque
+                                        </ResponsiveNavLink>
+                                    )}
+
+                                    {isAdmin() && (
+                                        <ResponsiveNavLink
+                                            href="/admin/bom"
+                                            active={window.location.pathname.includes('/admin/bom')}
+                                            className="mobile-nav-item flex items-center gap-3 px-4 py-3 rounded-xl"
+                                        >
+                                            <svg
+                                                className="w-4 h-4 icon-hover"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6m-6 4h6"
+                                                />
+                                            </svg>
+                                            Fichas Técnicas (BOM)
+                                        </ResponsiveNavLink>
+                                    )}
+
+                                    {isAdmin() && (
+                                        <ResponsiveNavLink
+                                            href="/admin/color-mapping"
+                                            active={window.location.pathname.includes('/admin/color-mapping')}
+                                            className="mobile-nav-item flex items-center gap-3 px-4 py-3 rounded-xl"
+                                        >
+                                            <svg
+                                                className="w-4 h-4 icon-hover"
+                                                fill="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                                            </svg>
+                                            Mapeamento de Cores
                                         </ResponsiveNavLink>
                                     )}
 

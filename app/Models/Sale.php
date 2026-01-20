@@ -236,6 +236,16 @@ class Sale extends Model
         return $this->hasMany(SaleProduct::class);
     }
 
+    public function stockReservations()
+    {
+        return $this->hasMany(StockReservation::class);
+    }
+
+    public function activeStockReservations()
+    {
+        return $this->hasMany(StockReservation::class)->where('status', 'reserved');
+    }
+
     public function products()
     {
         return $this->belongsToMany(Product::class, 'sale_products')

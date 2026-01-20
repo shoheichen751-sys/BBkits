@@ -32,7 +32,8 @@
       "Bash(pkill:*)",
       "WebSearch",
       "WebFetch(domain:tiny.com.br)",
-      "WebFetch(domain:docs.wati.io)"
+      "WebFetch(domain:docs.wati.io)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "additionalDirectories": [

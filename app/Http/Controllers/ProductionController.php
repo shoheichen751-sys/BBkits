@@ -12,14 +12,19 @@ use App\Events\SaleProductionStarted;
 use App\Events\SalePhotoSent;
 use App\Events\SaleOrderShipped;
 use App\Services\ActionHistoryService;
+use App\Services\StockReservationService;
 
 class ProductionController extends Controller
 {
     protected $actionHistoryService;
+    protected $stockReservationService;
 
-    public function __construct(ActionHistoryService $actionHistoryService)
-    {
+    public function __construct(
+        ActionHistoryService $actionHistoryService,
+        StockReservationService $stockReservationService
+    ) {
         $this->actionHistoryService = $actionHistoryService;
+        $this->stockReservationService = $stockReservationService;
 
         $this->middleware(function ($request, $next) {
             if (!auth()->user()->canManageProduction()) {
@@ -131,6 +136,16 @@ class ProductionController extends Controller
                 'production_started_at' => now()
             ]);
 
+            // Auto-deduct materials from stock (hard deduction)
+            $deductionResult = $this->stockReservationService->deductMaterialsForProduction($sale, auth()->id());
+
+            if (!$deductionResult['success'] && !empty($deductionResult['errors'])) {
+                Log::warning('Material deduction had errors', [
+                    'sale_id' => $sale->id,
+                    'errors' => $deductionResult['errors'],
+                ]);
+            }
+
             // Fire WhatsApp notification event
             event(new SaleProductionStarted($sale));
 
@@ -139,13 +154,14 @@ class ProductionController extends Controller
 
             Log::info('Production started', [
                 'order_id' => $sale->id,
-                'production_admin_id' => auth()->id()
+                'production_admin_id' => auth()->id(),
+                'materials_deducted' => count($deductionResult['deducted'] ?? []),
             ]);
-            
+
             // Notify client
             $notificationService = app(\App\Services\NotificationService::class);
             $notificationService->notifyProductionStarted($sale);
-            
+
             return back()->with('message', 'Produção iniciada com sucesso!');
             
         } catch (\Exception $e) {

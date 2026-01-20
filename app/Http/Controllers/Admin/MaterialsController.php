@@ -7,6 +7,7 @@ use App\Models\Material;
 use App\Models\MaterialCategory;
 use App\Models\Supplier;
 use App\Rules\ValidMaterialUnit;
+use App\Services\StockReservationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -278,5 +279,35 @@ class MaterialsController extends Controller
         }
 
         return (int) round($material->current_stock / $avgDailyConsumption);
+    }
+
+    /**
+     * Get low stock alerts (materials below minimum or with insufficient available stock).
+     */
+    public function lowStockAlerts(StockReservationService $stockService)
+    {
+        $alerts = $stockService->getLowStockMaterials();
+
+        return response()->json([
+            'success' => true,
+            'alerts' => $alerts,
+            'summary' => [
+                'critical_count' => $alerts['total_critical'],
+                'low_count' => $alerts['total_low'],
+                'total_alerts' => $alerts['total_critical'] + $alerts['total_low'],
+            ],
+        ]);
+    }
+
+    /**
+     * Low stock alerts page (Inertia).
+     */
+    public function lowStockAlertsPage(StockReservationService $stockService)
+    {
+        $alerts = $stockService->getLowStockMaterials();
+
+        return Inertia::render('Admin/Materials/LowStockAlerts', [
+            'alerts' => $alerts,
+        ]);
     }
 }
