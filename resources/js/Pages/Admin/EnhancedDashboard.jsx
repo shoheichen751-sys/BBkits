@@ -2,6 +2,13 @@ import { Head, usePage, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useEffect, useState } from 'react';
 import RankingDisplay from '@/Components/RankingDisplay';
+import {
+    LowStockAlertsWidget,
+    ThreadInventoryWidget,
+    ProductionStatusWidget,
+    CostTrendsWidget,
+    PurchaseSuggestionsWidget
+} from '@/Components/Widgets';
 
 export default function EnhancedDashboard({ 
     stats, 
@@ -139,6 +146,7 @@ export default function EnhancedDashboard({
 
     const tabs = [
         { id: 'overview', name: '📊 Visão Geral', icon: '📊' },
+        { id: 'inventory', name: '📦 Estoque', icon: '📦' },
         { id: 'lifecycle', name: '🔄 Ciclo de Pedidos', icon: '🔄' },
         { id: 'performance', name: '⚡ Performance', icon: '⚡' },
         { id: 'bottlenecks', name: '🚨 Gargalos', icon: '🚨' }
@@ -578,6 +586,62 @@ export default function EnhancedDashboard({
                                                     </p>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'inventory' && (
+                                <div className="space-y-8">
+                                    {/* Low Stock Alerts & Purchase Suggestions - Top Row */}
+                                    <div className="grid gap-6 md:grid-cols-2">
+                                        <LowStockAlertsWidget />
+                                        <PurchaseSuggestionsWidget />
+                                    </div>
+
+                                    {/* Thread Inventory & Production Status - Middle Row */}
+                                    <div className="grid gap-6 md:grid-cols-2">
+                                        <ThreadInventoryWidget />
+                                        <ProductionStatusWidget />
+                                    </div>
+
+                                    {/* Cost Trends - Full Width */}
+                                    <div>
+                                        <CostTrendsWidget />
+                                    </div>
+
+                                    {/* Quick Links */}
+                                    <div className="card-gradient p-6">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4">🔗 Links Rápidos - Estoque</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <a
+                                                href="/admin/materials"
+                                                className="bg-white/70 p-4 rounded-xl text-center hover:bg-white transition-colors"
+                                            >
+                                                <span className="text-2xl block mb-2">📦</span>
+                                                <span className="text-sm font-medium text-gray-700">Materiais</span>
+                                            </a>
+                                            <a
+                                                href="/admin/threads"
+                                                className="bg-white/70 p-4 rounded-xl text-center hover:bg-white transition-colors"
+                                            >
+                                                <span className="text-2xl block mb-2">🧵</span>
+                                                <span className="text-sm font-medium text-gray-700">Linhas</span>
+                                            </a>
+                                            <a
+                                                href="/admin/purchase-suggestions"
+                                                className="bg-white/70 p-4 rounded-xl text-center hover:bg-white transition-colors"
+                                            >
+                                                <span className="text-2xl block mb-2">🛒</span>
+                                                <span className="text-sm font-medium text-gray-700">Sugestões</span>
+                                            </a>
+                                            <a
+                                                href="/admin/reports/advanced"
+                                                className="bg-white/70 p-4 rounded-xl text-center hover:bg-white transition-colors"
+                                            >
+                                                <span className="text-2xl block mb-2">📊</span>
+                                                <span className="text-sm font-medium text-gray-700">Relatórios</span>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>

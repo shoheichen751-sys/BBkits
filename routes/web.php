@@ -8,6 +8,11 @@ use App\Http\Controllers\AdminReportsController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\CommissionRangeController;
+use App\Http\Controllers\Admin\ThreadController;
+use App\Http\Controllers\Admin\PricingFormulaController;
+use App\Http\Controllers\Admin\BatchSimulationController;
+use App\Http\Controllers\Admin\AdvancedReportsController;
+use App\Http\Controllers\Admin\DashboardWidgetsController;
 use App\Http\Controllers\FineController;
 use App\Http\Controllers\EmbroideryController;
 use App\Http\Controllers\ProductController;
@@ -506,6 +511,76 @@ Route::middleware(['auth', 'approved'])->group(function () {
             Route::get('/{product}', [\App\Http\Controllers\Admin\ProductCostController::class, 'show'])->name('show');
             Route::get('/{product}/cost', [\App\Http\Controllers\Admin\ProductCostController::class, 'getCost'])->name('get-cost');
             Route::get('/{product}/export-pdf', [\App\Http\Controllers\Admin\ProductCostController::class, 'exportProductPdf'])->name('product-export-pdf');
+        });
+
+        // Thread Management Routes (Milestone 4)
+        Route::prefix('admin/threads')->name('admin.threads.')->group(function () {
+            Route::get('/', [ThreadController::class, 'index'])->name('index');
+            Route::get('/create', [ThreadController::class, 'create'])->name('create');
+            Route::post('/', [ThreadController::class, 'store'])->name('store');
+            Route::get('/usage', [ThreadController::class, 'usage'])->name('usage');
+            Route::get('/analysis-8020', [ThreadController::class, 'analysis8020'])->name('analysis-8020');
+            Route::get('/export-pdf', [ThreadController::class, 'exportPdf'])->name('export-pdf');
+            Route::get('/{thread}', [ThreadController::class, 'show'])->name('show');
+            Route::get('/{thread}/edit', [ThreadController::class, 'edit'])->name('edit');
+            Route::put('/{thread}', [ThreadController::class, 'update'])->name('update');
+            Route::delete('/{thread}', [ThreadController::class, 'destroy'])->name('destroy');
+            Route::post('/{thread}/adjust-stock', [ThreadController::class, 'adjustStock'])->name('adjust-stock');
+            Route::get('/{thread}/substitutes', [ThreadController::class, 'getSubstitutes'])->name('substitutes');
+        });
+
+        // Pricing Formula Routes (Milestone 4)
+        Route::prefix('admin/pricing-formulas')->name('admin.pricing-formulas.')->group(function () {
+            Route::get('/', [PricingFormulaController::class, 'index'])->name('index');
+            Route::get('/create', [PricingFormulaController::class, 'create'])->name('create');
+            Route::post('/', [PricingFormulaController::class, 'store'])->name('store');
+            Route::get('/{formula}', [PricingFormulaController::class, 'show'])->name('show');
+            Route::get('/{formula}/edit', [PricingFormulaController::class, 'edit'])->name('edit');
+            Route::put('/{formula}', [PricingFormulaController::class, 'update'])->name('update');
+            Route::delete('/{formula}', [PricingFormulaController::class, 'destroy'])->name('destroy');
+            Route::post('/preview', [PricingFormulaController::class, 'preview'])->name('preview');
+            Route::post('/apply-to-products', [PricingFormulaController::class, 'applyToProducts'])->name('apply-to-products');
+            Route::post('/recalculate', [PricingFormulaController::class, 'recalculate'])->name('recalculate');
+            Route::get('/products/for-formula', [PricingFormulaController::class, 'getProductsForFormula'])->name('products');
+        });
+
+        // Batch Simulation Routes (Milestone 4)
+        Route::prefix('admin/batch-simulation')->name('admin.batch-simulation.')->group(function () {
+            Route::get('/', [BatchSimulationController::class, 'index'])->name('index');
+            Route::get('/create', [BatchSimulationController::class, 'create'])->name('create');
+            Route::post('/', [BatchSimulationController::class, 'store'])->name('store');
+            Route::post('/calculate', [BatchSimulationController::class, 'calculate'])->name('calculate');
+            Route::post('/feasibility', [BatchSimulationController::class, 'feasibility'])->name('feasibility');
+            Route::post('/compare', [BatchSimulationController::class, 'compare'])->name('compare');
+            Route::post('/purchase-suggestions', [BatchSimulationController::class, 'purchaseSuggestions'])->name('purchase-suggestions');
+            Route::get('/products', [BatchSimulationController::class, 'getProducts'])->name('products');
+            Route::get('/{simulation}', [BatchSimulationController::class, 'show'])->name('show');
+            Route::get('/{simulation}/export-pdf', [BatchSimulationController::class, 'exportPdf'])->name('export-pdf');
+            Route::post('/{simulation}/archive', [BatchSimulationController::class, 'archive'])->name('archive');
+            Route::delete('/{simulation}', [BatchSimulationController::class, 'destroy'])->name('destroy');
+        });
+
+        // Advanced Reports Routes (Milestone 4)
+        Route::prefix('admin/reports/advanced')->name('admin.reports.advanced.')->group(function () {
+            Route::get('/', [AdvancedReportsController::class, 'index'])->name('index');
+            Route::get('/consumption-trends', [AdvancedReportsController::class, 'consumptionTrends'])->name('consumption-trends');
+            Route::get('/cost-analysis', [AdvancedReportsController::class, 'costAnalysis'])->name('cost-analysis');
+            Route::get('/forecast', [AdvancedReportsController::class, 'forecast'])->name('forecast');
+            Route::get('/wastage', [AdvancedReportsController::class, 'wastage'])->name('wastage');
+            Route::get('/thread-usage', [AdvancedReportsController::class, 'threadUsage'])->name('thread-usage');
+            Route::get('/export/consumption-trends', [AdvancedReportsController::class, 'exportConsumptionTrendsPdf'])->name('export.consumption-trends');
+            Route::get('/export/cost-analysis', [AdvancedReportsController::class, 'exportCostAnalysisPdf'])->name('export.cost-analysis');
+            Route::get('/export/forecast', [AdvancedReportsController::class, 'exportForecastPdf'])->name('export.forecast');
+        });
+
+        // Dashboard Widgets API (Milestone 4)
+        Route::prefix('api/dashboard-widgets')->name('api.dashboard-widgets.')->group(function () {
+            Route::get('/all', [DashboardWidgetsController::class, 'all'])->name('all');
+            Route::get('/low-stock-alerts', [DashboardWidgetsController::class, 'lowStockAlerts'])->name('low-stock-alerts');
+            Route::get('/purchase-suggestions', [DashboardWidgetsController::class, 'purchaseSuggestions'])->name('purchase-suggestions');
+            Route::get('/production-status', [DashboardWidgetsController::class, 'productionStatus'])->name('production-status');
+            Route::get('/thread-inventory', [DashboardWidgetsController::class, 'threadInventory'])->name('thread-inventory');
+            Route::get('/cost-trends', [DashboardWidgetsController::class, 'costTrends'])->name('cost-trends');
         });
 
         // Permission Management Routes

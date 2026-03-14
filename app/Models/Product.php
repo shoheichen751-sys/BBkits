@@ -16,6 +16,10 @@ class Product extends Model
         'name',
         'description',
         'price',
+        'pricing_formula_id',
+        'calculated_price',
+        'overhead_cost',
+        'price_calculated_at',
         'category',
         'image_url',
         'allows_embroidery',
@@ -27,6 +31,9 @@ class Product extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'calculated_price' => 'decimal:2',
+        'overhead_cost' => 'decimal:2',
+        'price_calculated_at' => 'datetime',
         'allows_embroidery' => 'boolean',
         'is_active' => 'boolean',
         'available_sizes' => 'array',
@@ -70,6 +77,11 @@ class Product extends Model
     public function productCategory(): BelongsTo
     {
         return $this->belongsTo(ProductCategory::class, 'category_id');
+    }
+
+    public function pricingFormula(): BelongsTo
+    {
+        return $this->belongsTo(PricingFormula::class);
     }
 
     public function sizes(): HasMany
@@ -155,5 +167,44 @@ class Product extends Model
         }
 
         return $materials;
+    }
+
+    /**
+     * Recalculate product price using assigned or default pricing formula.
+     */
+    public function recalculatePrice(): ?float
+    {
+        $formula = $this->pricingFormula ?? PricingFormula::getFormulaFor($this);
+
+        if (!$formula) {
+            return null;
+        }
+
+        return $formula->applyToProduct($this);
+    }
+
+    /**
+     * Get the effective selling price (calculated or manual).
+     */
+    public function getEffectivePriceAttribute(): float
+    {
+        return $this->calculated_price ?? $this->price ?? 0;
+    }
+
+    /**
+     * Check if price needs recalculation (material costs changed, etc).
+     */
+    public function needsPriceRecalculation(): bool
+    {
+        if (!$this->price_calculated_at) {
+            return true;
+        }
+
+        // Check if any BOM material prices changed after last calculation
+        $latestMaterialUpdate = $this->activeBom()
+            ->join('materials', 'product_boms.material_id', '=', 'materials.id')
+            ->max('materials.updated_at');
+
+        return $latestMaterialUpdate && $latestMaterialUpdate > $this->price_calculated_at;
     }
 }
