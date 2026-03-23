@@ -16,42 +16,64 @@ class ColorMappingController extends Controller
      */
     public function index(Request $request)
     {
-        // Get all unique product colors from products
-        $productColors = Product::pluck('available_colors')
-            ->flatten()
-            ->unique()
-            ->filter()
-            ->sort()
-            ->values()
-            ->toArray();
+        try {
+            // Get all unique product colors from products
+            $productColors = Product::pluck('available_colors')
+                ->flatten()
+                ->unique()
+                ->filter()
+                ->sort()
+                ->values()
+                ->toArray();
 
-        // Get all materials
-        $materials = Material::orderBy('name')->get(['id', 'name', 'sku', 'unit']);
+            // Get all materials with category relationship
+            $materials = Material::with('category')
+                ->orderBy('name')
+                ->get(['id', 'name', 'sku', 'unit', 'category_id']);
 
-        // Get all mappings with relationships
-        $mappings = MaterialColorMapping::with(['baseMaterial', 'targetMaterial'])
-            ->orderBy('product_color')
-            ->orderBy('base_material_id')
-            ->get();
+            // Get all mappings with relationships
+            $mappings = MaterialColorMapping::with(['baseMaterial.category', 'targetMaterial.category'])
+                ->orderBy('product_color')
+                ->orderBy('base_material_id')
+                ->get();
 
-        // Group mappings by color for easier display
-        $mappingsByColor = $mappings->groupBy('product_color');
+            // Group mappings by color for easier display
+            $mappingsByColor = $mappings->groupBy('product_color');
 
-        // Calculate stats
-        $stats = [
-            'total_mappings' => $mappings->count(),
-            'colors_configured' => $mappings->pluck('product_color')->unique()->count(),
-            'total_product_colors' => count($productColors),
-            'unconfigured_colors' => count($productColors) - $mappings->pluck('product_color')->unique()->count(),
-        ];
+            // Calculate stats
+            $stats = [
+                'total_mappings' => $mappings->count(),
+                'colors_configured' => $mappings->pluck('product_color')->unique()->count(),
+                'total_product_colors' => count($productColors),
+                'unconfigured_colors' => count($productColors) - $mappings->pluck('product_color')->unique()->count(),
+            ];
 
-        return Inertia::render('Admin/ColorMapping/Index', [
-            'mappings' => $mappings,
-            'mappingsByColor' => $mappingsByColor,
-            'productColors' => $productColors,
-            'materials' => $materials,
-            'stats' => $stats,
-        ]);
+            return Inertia::render('Admin/ColorMapping/Index', [
+                'mappings' => $mappings,
+                'mappingsByColor' => $mappingsByColor,
+                'productColors' => $productColors,
+                'materials' => $materials,
+                'stats' => $stats,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Color Mapping Index Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return Inertia::render('Admin/ColorMapping/Index', [
+                'mappings' => [],
+                'mappingsByColor' => [],
+                'productColors' => [],
+                'materials' => [],
+                'stats' => [
+                    'total_mappings' => 0,
+                    'colors_configured' => 0,
+                    'total_product_colors' => 0,
+                    'unconfigured_colors' => 0,
+                ],
+                'error' => 'Erro ao carregar mapeamentos: ' . $e->getMessage(),
+            ]);
+        }
     }
 
     /**

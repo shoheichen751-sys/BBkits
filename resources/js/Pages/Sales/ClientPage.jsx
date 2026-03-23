@@ -268,7 +268,12 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                                                     <div className="text-right ml-4">
                                                         <div className="text-blue-100 text-sm">Total deste item</div>
                                                         <div className="font-bold text-xl">
-                                                            {formatBRL((saleProduct.unit_price || 0) * (saleProduct.quantity || 1))}
+                                                            {formatBRL(
+                                                                ((parseFloat(saleProduct.unit_price) || 0) +
+                                                                 (parseFloat(saleProduct.size_price) || 0) +
+                                                                 (parseFloat(saleProduct.embroidery_cost) || 0)) *
+                                                                (parseInt(saleProduct.quantity) || 1)
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -383,7 +388,13 @@ export default function ClientPage({ sale, orderStatus, orderStatusColor, paidAm
                                                                 )}
                                                                 <div className="border-t border-green-300 pt-1 flex justify-between font-bold">
                                                                     <span className="text-green-800">Total unitário:</span>
-                                                                    <span className="text-green-600">{formatBRL(saleProduct.unit_price || 0)}</span>
+                                                                    <span className="text-green-600">
+                                                                        {formatBRL(
+                                                                            (parseFloat(saleProduct.unit_price) || 0) +
+                                                                            (parseFloat(saleProduct.size_price) || 0) +
+                                                                            (parseFloat(saleProduct.embroidery_cost) || 0)
+                                                                        )}
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </div>

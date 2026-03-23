@@ -19,6 +19,47 @@ class AdminController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        try {
+            return $this->buildDashboard($request);
+        } catch (\Exception $e) {
+            \Log::error('Admin Dashboard Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Return minimal dashboard data on error
+            return Inertia::render('Admin/EnhancedDashboard', [
+                'stats' => [
+                    'totalSellers' => 0,
+                    'monthlyRevenue' => 0,
+                    'pendingSales' => 0,
+                    'approvedSales' => 0,
+                    'totalSalesCount' => 0,
+                    'monthlyTarget' => 200000,
+                    'monthlyCommissions' => 0,
+                    'orderLifecycle' => [],
+                    'performance' => ['avg_processing_time_days' => 0, 'avg_stage_time' => [], 'conversion_rates' => [], 'daily_trends' => []],
+                    'bottlenecks' => [],
+                    'dateFilter' => 'current_month',
+                    'statusFilter' => 'all',
+                    'currentMonth' => now()->month,
+                    'currentYear' => now()->year,
+                    'error' => 'Erro ao carregar dashboard: ' . $e->getMessage(),
+                ],
+                'topPerformers' => [],
+                'recentSales' => [],
+                'monthlyData' => [],
+                'filterOptions' => [
+                    'dateFilters' => [],
+                    'statusFilters' => [],
+                    'orderStatusFilters' => []
+                ],
+                'currentFilters' => []
+            ]);
+        }
+    }
+
+    private function buildDashboard(Request $request)
+    {
         $commissionService = new CommissionService();
         $currentMonth = $request->get('month', Carbon::now()->month);
         $currentYear = $request->get('year', Carbon::now()->year);
@@ -467,6 +508,13 @@ class AdminController extends Controller
                 ->groupBy('date')
                 ->orderBy('date')
                 ->get();
+        } elseif ($dbDriver === 'pgsql') {
+            // PostgreSQL version using DATE()
+            $dailyOrders = Sale::selectRaw("DATE(created_at) as date, COUNT(*) as count")
+                ->where('created_at', '>=', Carbon::now()->subDays(30))
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
         } else {
             // SQLite version using strftime
             $dailyOrders = Sale::selectRaw("strftime('%Y-%m-%d', created_at) as date, COUNT(*) as count")
@@ -493,11 +541,23 @@ class AdminController extends Controller
             return 0;
         }
 
-        $totalHours = $collection->sum(function ($item) use ($startField, $endField) {
-            return Carbon::parse($item->$endField)->diffInHours(Carbon::parse($item->$startField));
+        $validItems = $collection->filter(function ($item) use ($startField, $endField) {
+            return !empty($item->$startField) && !empty($item->$endField);
         });
 
-        return round($totalHours / $collection->count(), 1);
+        if ($validItems->count() === 0) {
+            return 0;
+        }
+
+        $totalHours = $validItems->sum(function ($item) use ($startField, $endField) {
+            try {
+                return Carbon::parse($item->$endField)->diffInHours(Carbon::parse($item->$startField));
+            } catch (\Exception $e) {
+                return 0;
+            }
+        });
+
+        return round($totalHours / $validItems->count(), 1);
     }
     
     /**

@@ -15,6 +15,38 @@ export default function OrdersIndex({ orders, statusFilter }) {
         move_to_production: false
     });
 
+    // Check if 50% minimum payment requirement is met for initial payment
+    const isMinimumPaymentMet = (order) => {
+        if (!order || order.order_status !== 'pending_payment') {
+            return true; // Only check for initial payment status
+        }
+        const totalAmount = parseFloat(order.total_amount_with_shipping || 0);
+        const paidAmount = parseFloat(order.total_paid_amount || 0);
+        const pendingAmount = parseFloat(order.total_pending_amount || 0);
+        const totalReceived = paidAmount + pendingAmount;
+        const minimumRequired = totalAmount * 0.5;
+        return totalReceived >= minimumRequired;
+    };
+
+    // Get 50% payment requirement info
+    const getPaymentRequirementInfo = (order) => {
+        if (!order) return null;
+        const totalAmount = parseFloat(order.total_amount_with_shipping || 0);
+        const paidAmount = parseFloat(order.total_paid_amount || 0);
+        const pendingAmount = parseFloat(order.total_pending_amount || 0);
+        const totalReceived = paidAmount + pendingAmount;
+        const minimumRequired = totalAmount * 0.5;
+        const shortfall = minimumRequired - totalReceived;
+        return {
+            totalAmount,
+            totalReceived,
+            minimumRequired,
+            shortfall: shortfall > 0 ? shortfall : 0,
+            percentagePaid: totalAmount > 0 ? (totalReceived / totalAmount) * 100 : 0,
+            isMet: totalReceived >= minimumRequired
+        };
+    };
+
     const handleOrderClick = (order) => {
         setSelectedOrder(order);
         setData({
@@ -24,7 +56,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
             move_to_production: false
         });
         setShowModal(true);
-        
+
         // Load payment proof preview
         if (order.initial_payment_proof_data) {
             setPaymentPreview(order.initial_payment_proof_data);
@@ -569,6 +601,35 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                         <span>💡 <strong>Dica:</strong> Verifique o comprovante antes de aprovar</span>
                                     </div>
                                 </div>
+                                {/* 50% Minimum Payment Warning */}
+                                {selectedOrder && selectedOrder.order_status === 'pending_payment' && !isMinimumPaymentMet(selectedOrder) && (
+                                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        <div className="flex items-start gap-3">
+                                            <div className="flex-shrink-0">
+                                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-bold text-red-800 mb-1">
+                                                    ⚠️ Pagamento Inicial Insuficiente
+                                                </h4>
+                                                <p className="text-sm text-red-700">
+                                                    O pagamento mínimo para iniciar a produção é de <strong>50%</strong> do valor total do pedido.
+                                                </p>
+                                                <div className="mt-2 text-sm text-red-600 space-y-1">
+                                                    <div>• Mínimo necessário: <strong>{formatCurrency(getPaymentRequirementInfo(selectedOrder)?.minimumRequired || 0)}</strong></div>
+                                                    <div>• Valor recebido: <strong>{formatCurrency(getPaymentRequirementInfo(selectedOrder)?.totalReceived || 0)}</strong></div>
+                                                    <div>• Faltam: <strong>{formatCurrency(getPaymentRequirementInfo(selectedOrder)?.shortfall || 0)}</strong></div>
+                                                </div>
+                                                <p className="mt-2 text-xs text-red-600">
+                                                    Solicite ao cliente que envie o valor restante antes de aprovar.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setShowModal(false)}
@@ -599,7 +660,7 @@ export default function OrdersIndex({ orders, statusFilter }) {
                                     </button>
                                     <button
                                         onClick={handleApprove}
-                                        disabled={processing}
+                                        disabled={processing || (selectedOrder?.order_status === 'pending_payment' && !isMinimumPaymentMet(selectedOrder))}
                                         className="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 font-semibold shadow-lg flex items-center space-x-2"
                                     >
                                         {processing ? (

@@ -135,7 +135,7 @@ class StockReservationService
         $materials = [];
 
         // Get active BOM entries for this product
-        $bomEntries = $product->activeBom()->with(['material', 'variants'])->get();
+        $bomEntries = $product->activeBom()->with(['material.category', 'variants'])->get();
 
         foreach ($bomEntries as $bom) {
             // Get base material and quantity

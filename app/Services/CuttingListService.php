@@ -86,7 +86,7 @@ class CuttingListService
                             'material_id' => $materialId,
                             'material_name' => $materialData['material']->name,
                             'material_reference' => $materialData['material']->reference,
-                            'material_category' => $materialData['material']->category->name ?? 'Sem categoria',
+                            'material_category' => $materialData['material']->category?->name ?? 'Sem categoria',
                             'unit' => $materialData['unit'],
                             'total_quantity' => $quantity,
                             'current_stock' => (float) $materialData['material']->current_stock,
