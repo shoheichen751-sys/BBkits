@@ -316,13 +316,20 @@ class Sale extends Model
 
     public function getCommissionBaseAmount(): float
     {
-        // If sale has payment records, use the approved payments total
-        if ($this->hasPartialPayments()) {
-            return $this->getTotalPaidAmount() - $this->shipping_amount;
+        // Get the total paid amount
+        $paidAmount = $this->hasPartialPayments()
+            ? $this->getTotalPaidAmount()
+            : (float) $this->received_amount;
+
+        // If nothing is paid, commission base is 0
+        if ($paidAmount <= 0) {
+            return 0;
         }
-        
-        // Fallback to original received_amount for backward compatibility
-        return $this->received_amount - $this->shipping_amount;
+
+        // Commission base = paid amount - shipping (never negative)
+        $commissionBase = $paidAmount - (float) $this->shipping_amount;
+
+        return max(0, $commissionBase);
     }
 
     public function isPending(): bool

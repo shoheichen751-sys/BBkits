@@ -1,0 +1,112 @@
+============================================================
+BBKITS FINANCIAL FLOW - PRACTICAL TESTING CHECKLIST
+============================================================
+
+Test Date: _______________
+Tested By: Shohei
+Production URL: https://bbkit.onrender.com
+
+------------------------------------------------------------
+TEST DATA (Use Client's Example)
+------------------------------------------------------------
+Products Total:     R$ 400.00
+Shipping Cost:      R$ 90.00
+Order Total:        R$ 490.00
+Initial Payment:    R$ 245.00 (50%)
+Final Payment:      R$ 245.00
+Commission Base:    R$ 400.00 (excludes shipping)
+
+============================================================
+FEATURE #1: TOTAL VALUE CALCULATION
+============================================================
+Expected: Products (R$400) + Shipping (R$90) = Total (R$490)
+
+[ ] Screenshot 1.1 - Sales/Show page shows Total: R$490
+[ ] Screenshot 1.2 - ClientPage shows Total: R$490
+[ ] Screenshot 1.3 - Finance/Orders shows Total: R$490
+
+Status: PASS / FAIL
+Notes: _________________________________________________
+
+============================================================
+FEATURE #2: SHIPPING COST DISPLAY
+============================================================
+Expected: Shipping shown separately as R$90
+
+[ ] Screenshot 2.1 - Sales/Show page shows Shipping: R$90
+[ ] Screenshot 2.2 - ClientPage shows Shipping: R$90
+[ ] Screenshot 2.3 - Finance/Orders shows Shipping: R$90
+
+Status: PASS / FAIL
+Notes: _________________________________________________
+
+============================================================
+FEATURE #3: AMOUNT PAID DISPLAY
+============================================================
+Expected: Shows approved payment amount correctly
+
+[ ] Screenshot 3.1 - Before approval: Paid = R$0, Pending = R$245
+[ ] Screenshot 3.2 - After approval: Paid = R$245, Pending = R$0
+
+Status: PASS / FAIL
+Notes: _________________________________________________
+
+============================================================
+FEATURE #4: REMAINING BALANCE CALCULATION
+============================================================
+Expected: Total - Paid - Pending = Remaining
+
+[ ] Screenshot 4.1 - After R$245 paid: Remaining = R$245
+[ ] Screenshot 4.2 - After R$490 paid: Remaining = R$0
+
+Status: PASS / FAIL
+Notes: _________________________________________________
+
+============================================================
+FEATURE #5: COMMISSION BASE (EXCLUDES SHIPPING)
+============================================================
+Expected: Commission Base = Paid Amount - Shipping = R$400
+
+[ ] Screenshot 5.1 - Commission base shows R$400 (NOT R$490)
+[ ] Screenshot 5.2 - Confirm shipping R$90 is NOT included
+
+Status: PASS / FAIL
+Notes: _________________________________________________
+
+============================================================
+FEATURE #6: 50% MINIMUM PAYMENT RULE
+============================================================
+Expected: Cannot approve order if payment < 50% of total
+
+[ ] Screenshot 6.1 - Try approve with R$200 (< 50%) = BLOCKED
+[ ] Screenshot 6.2 - Approve with R$245 (= 50%) = ALLOWED
+
+Status: PASS / FAIL
+Notes: _________________________________________________
+
+============================================================
+CONSISTENCY CHECK - ALL 3 PAGES SHOW SAME VALUES
+============================================================
+
+Page                | Total  | Shipping | Paid   | Remaining
+--------------------|--------|----------|--------|----------
+Sales/Show          | R$___  | R$___    | R$___  | R$___
+ClientPage          | R$___  | R$___    | R$___  | R$___
+Finance/Orders      | R$___  | R$___    | R$___  | R$___
+
+[ ] All values match across all pages
+
+============================================================
+FINAL RESULT
+============================================================
+
+Total Features Tested: 6
+Passed: ___
+Failed: ___
+
+Overall Status: PASS / FAIL
+
+Tested By: _______________________
+Date: _______________
+
+============================================================
