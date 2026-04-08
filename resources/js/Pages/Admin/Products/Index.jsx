@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import Modal from '@/Components/Modal';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
@@ -9,11 +9,22 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 
 export default function Index({ auth, products, categories, filters }) {
+    const { flash } = usePage().props;
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [flashMessage, setFlashMessage] = useState(null);
+
+    // Handle flash messages
+    useEffect(() => {
+        if (flash?.success || flash?.error) {
+            setFlashMessage(flash);
+            const timer = setTimeout(() => setFlashMessage(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
     
     const { data, setData, post, put, delete: destroy, processing, errors, reset } = useForm({
         name: '',
@@ -37,13 +48,16 @@ export default function Index({ auth, products, categories, filters }) {
     
     const openEditModal = (product) => {
         setSelectedProduct(product);
+        // Use available_sizes and available_colors (correct field names from Product model)
+        const productSizes = product.available_sizes || product.sizes || [];
+        const productColors = product.available_colors || product.colors || [];
         setData({
             name: product.name,
             description: product.description || '',
             price: product.price,
             category_id: product.category_id || (categories && categories.length > 0 ? categories[0].id : ''),
-            sizes: Array.isArray(product.sizes) ? product.sizes : JSON.parse(product.sizes || '[]'),
-            colors: Array.isArray(product.colors) ? product.colors : JSON.parse(product.colors || '[]'),
+            sizes: Array.isArray(productSizes) ? productSizes : JSON.parse(productSizes || '[]'),
+            colors: Array.isArray(productColors) ? productColors : JSON.parse(productColors || '[]'),
             allows_embroidery: product.allows_embroidery,
             is_active: product.is_active,
             stock_quantity: product.stock_quantity || 0,
@@ -162,10 +176,17 @@ export default function Index({ auth, products, categories, filters }) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Flash Messages */}
+                    {flashMessage && (
+                        <div className={`mb-4 p-4 rounded-lg ${flashMessage.success ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'}`}>
+                            {flashMessage.success || flashMessage.error}
+                        </div>
+                    )}
+
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 bg-white border-b border-gray-200">
                             <div className="mb-4">
-                                <button 
+                                <button
                                     onClick={openAddModal}
                                     className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded"
                                 >
@@ -262,6 +283,18 @@ export default function Index({ auth, products, categories, filters }) {
             <Modal show={showAddModal} onClose={() => setShowAddModal(false)}>
                 <form onSubmit={handleSubmit} className="p-6">
                     <h2 className="text-lg font-medium text-gray-900 mb-6">Adicionar Novo Produto</h2>
+
+                    {/* Display validation errors */}
+                    {Object.keys(errors).length > 0 && (
+                        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                            <p className="font-bold">Erros de validação:</p>
+                            <ul className="list-disc list-inside">
+                                {Object.entries(errors).map(([field, message]) => (
+                                    <li key={field}>{message}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
@@ -419,6 +452,18 @@ export default function Index({ auth, products, categories, filters }) {
             <Modal show={showEditModal} onClose={() => setShowEditModal(false)}>
                 <form onSubmit={handleUpdate} className="p-6">
                     <h2 className="text-lg font-medium text-gray-900 mb-6">Editar Produto</h2>
+
+                    {/* Display validation errors */}
+                    {Object.keys(errors).length > 0 && (
+                        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                            <p className="font-bold">Erros de validação:</p>
+                            <ul className="list-disc list-inside">
+                                {Object.entries(errors).map(([field, message]) => (
+                                    <li key={field}>{message}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
