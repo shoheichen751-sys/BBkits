@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBKits - Guia de Teste de Correções de Bugs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+
+        @media print {
+            body {
+                padding: 20px;
+                font-size: 11pt;
+            }
+            .no-print {
+                display: none;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
+
+        h1 {
+            color: #7c3aed;
+            border-bottom: 3px solid #7c3aed;
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        h2 {
+            color: #5b21b6;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #f3e8ff 0%, #fce7f3 100%);
+            border-radius: 8px;
+            font-size: 18px;
+        }
+
+        h3 {
+            color: #6b21a8;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .meta {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #7c3aed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        th {
+            background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .bug-section {
+            background: #fefefe;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .bug-title {
+            color: #7c3aed;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bug-number {
+            background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .problem {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+        }
+
+        .expected {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+        }
+
+        .steps {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .steps ol {
+            margin-left: 20px;
+        }
+
+        .steps li {
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .code {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .note {
+            background: #fefce8;
+            border-left: 4px solid #eab308;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 12px;
+        }
+
+        .status-fixed {
+            background: #22c55e;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-working {
+            background: #3b82f6;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+        }
+
+        .summary-table tr td:last-child {
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">
+        Imprimir / Salvar PDF
+    </button>
+
+    <h1>BBKits - Guia de Teste</h1>
+    <p class="subtitle">QA Bug Fixes Testing Guide</p>
+
+    <div class="meta">
+        <strong>Data:</strong> 10 de Abril de 2026<br>
+        <strong>Versao:</strong> 1.0
+    </div>
+
+    <h2>Credenciais de Teste</h2>
+    <table>
+        <tr>
+            <th>Perfil</th>
+            <th>Email</th>
+            <th>Senha</th>
+        </tr>
+        <tr>
+            <td>Admin</td>
+            <td><span class="code">admin@bbkits.com</span></td>
+            <td><span class="code">admin123</span></td>
+        </tr>
+        <tr>
+            <td>Vendedora</td>
+            <td><span class="code">vendedora@bbkits.com</span></td>
+            <td><span class="code">vendedora123</span></td>
+        </tr>
+        <tr>
+            <td>Financeiro</td>
+            <td><span class="code">financeiro@bbkits.com</span></td>
+            <td><span class="code">financeiro123</span></td>
+        </tr>
+    </table>
+
+    <div class="bug-section">
+        <div class="bug-title">
+            <span class="bug-number">BUG-01</span>
+            Produtos - CRUD Corrigido
+        </div>
+
+        <div class="problem">
+            <strong>Problema Original:</strong> Pagina de produtos nao carregava dados corretamente, erros ao criar/editar/deletar.
+        </div>
+
+        <div class="steps">
+            <strong>Como Testar:</strong>
+            <ol>
+                <li>Login como <span class="code">admin@bbkits.com</span></li>
+                <li>Acesse <strong>Admin > Produtos</strong> ou va para <span class="code">/admin/products</span></li>
+                <li><strong>Criar Produto:</strong> Clique em "Novo Produto", preencha Nome, Preco, Tamanhos, Cores e salve</li>
+                <li><strong>Editar Produto:</strong> Clique em "Editar", altere algum campo e salve</li>
+                <li><strong>Deletar Produto:</strong> Clique em "Excluir" e confirme</li>
+            </ol>
+        </div>
+
+        <div class="expected">
+            <strong>Esperado:</strong> Todas as operacoes funcionam sem erros. Produtos aparecem corretamente na lista.
+        </div>
+    </div>
+
+    <div class="bug-section">
+        <div class="bug-title">
+            <span class="bug-number">BUG-06</span>
+            Comprovantes de Pagamento
+        </div>
+
+        <div class="problem">
+            <strong>Problema Original:</strong> Erro "Invalid URL" ao clicar em "Registrar Pagamento".
+        </div>
+
+        <div class="steps">
+            <strong>Como Testar:</strong>
+            <ol>
+                <li>Login como <span class="code">vendedora@bbkits.com</span></li>
+                <li>Va para <span class="code">/sales</span></li>
+                <li>Encontre uma venda e clique no botao <strong>"Pagamentos"</strong> (icone $)</li>
+                <li>Clique em <strong>"Adicionar Pagamento"</strong></li>
+                <li>Preencha: Valor (100.00), Data, Metodo (PIX), Comprovante (imagem/PDF)</li>
+                <li>Clique em <strong>"Registrar Pagamento"</strong></li>
+            </ol>
+        </div>
+
+        <div class="expected">
+            <strong>Esperado:</strong> Modal abre sem erros. Pagamento e registrado com sucesso.
+        </div>
+    </div>
+
+    <div class="bug-section page-break">
+        <div class="bug-title">
+            <span class="bug-number">BUG-07</span>
+            Cancelamento de Venda (Senha Admin)
+        </div>
+
+        <div class="problem">
+            <strong>Problema Original:</strong> Vendedora precisava de senha admin para cancelar suas proprias vendas pendentes.
+        </div>
+
+        <div class="steps">
+            <strong>Como Testar:</strong>
+            <ol>
+                <li>Login como <span class="code">vendedora@bbkits.com</span></li>
+                <li>Va para <span class="code">/sales/create</span> e crie uma nova venda</li>
+                <li>Apos criar, va para <span class="code">/sales</span></li>
+                <li>Encontre a venda recem-criada (status: Pendente)</li>
+                <li>Clique no botao <strong>"Cancelar"</strong></li>
+            </ol>
+        </div>
+
+        <div class="expected">
+            <strong>Esperado:</strong> Modal aparece <strong>SEM</strong> campo de senha de administrador (mensagem verde). Apenas campo de "Motivo do Cancelamento". Venda e cancelada com sucesso.
+        </div>
+
+        <div class="note">
+            <strong>Nota:</strong> Se tentar cancelar venda de outro usuario, o campo de senha admin DEVE aparecer.
+        </div>
+    </div>
+
+    <div class="bug-section">
+        <div class="bug-title">
+            <span class="bug-number">BUG-08</span>
+            Redirecionamento Apos Cancelamento
+        </div>
+
+        <div class="problem">
+            <strong>Problema Original:</strong> Apos cancelar, usuario era redirecionado para pagina inexistente.
+        </div>
+
+        <div class="steps">
+            <strong>Como Testar:</strong>
+            <ol>
+                <li>Login como <span class="code">vendedora@bbkits.com</span></li>
+                <li>Crie uma nova venda pendente</li>
+                <li>Cancele a venda</li>
+            </ol>
+        </div>
+
+        <div class="expected">
+            <strong>Esperado:</strong> Apos cancelar, voce e redirecionado para <span class="code">/sales</span> (lista de vendas). Mensagem: "Venda cancelada com sucesso". <strong>NAO</strong> deve mostrar erro 404.
+        </div>
+    </div>
+
+    <div class="bug-section">
+        <div class="bug-title">
+            <span class="bug-number">BUG-09/10</span>
+            Progresso de Pagamento
+        </div>
+
+        <div class="problem">
+            <strong>Problema Original:</strong> Barra de progresso mostrava 0% mesmo com pagamentos realizados.
+        </div>
+
+        <div class="steps">
+            <strong>Como Testar:</strong>
+            <ol>
+                <li>Login como <span class="code">vendedora@bbkits.com</span></li>
+                <li>Va para <span class="code">/sales/create</span></li>
+                <li>Crie uma nova venda COM pagamento inicial:
+                    <ul>
+                        <li>Valor Total: R$ 1.000,00</li>
+                        <li>Valor Recebido: R$ 500,00 (50%)</li>
+                    </ul>
+                </li>
+                <li>Apos criar, va para <span class="code">/sales</span></li>
+                <li>Clique em <strong>"Pagamentos"</strong> da venda criada</li>
+            </ol>
+        </div>
+
+        <div class="expected">
+            <strong>Esperado:</strong> Barra de progresso mostra <strong>50%</strong> (nao 0%). Valor Pago: R$ 500,00.
+        </div>
+
+        <div class="note">
+            <strong>Nota:</strong> Pagamentos <= R$ 5.000 sao aprovados automaticamente. Pagamentos maiores ficam pendentes ate aprovacao do financeiro.
+        </div>
+    </div>
+
+    <div class="bug-section page-break">
+        <div class="bug-title">
+            <span class="bug-number">BUG-11</span>
+            Status do Pedido Inconsistente
+        </div>
+
+        <div class="problem">
+            <strong>Problema Original:</strong> Labels de status diferentes entre backend e frontend.
+        </div>
+
+        <div class="steps">
+            <strong>Como Testar:</strong>
+            <ol>
+                <li>Login como <span class="code">admin@bbkits.com</span></li>
+                <li>Va para <span class="code">/kanban</span> (Quadro Kanban)</li>
+                <li>Verifique os titulos das colunas conforme tabela abaixo</li>
+            </ol>
+        </div>
+
+        <table>
+            <tr>
+                <th>Status</th>
+                <th>Label Correto</th>
+            </tr>
+            <tr>
+                <td>pending_payment</td>
+                <td>Aguardando Pagamento</td>
+            </tr>
+            <tr>
+                <td>payment_approved</td>
+                <td>Pagamento Aprovado</td>
+            </tr>
+            <tr>
+                <td>in_production</td>
+                <td>Em Producao</td>
+            </tr>
+            <tr>
+                <td><strong>photo_sent</strong></td>
+                <td><strong>Aguardando Aprovacao da Cliente</strong></td>
+            </tr>
+            <tr>
+                <td><strong>photo_approved</strong></td>
+                <td><strong>Foto Aprovada</strong></td>
+            </tr>
+            <tr>
+                <td>pending_final_payment</td>
+                <td>Pagamento Final</td>
+            </tr>
+            <tr>
+                <td>ready_for_shipping</td>
+                <td>Pronto para Envio</td>
+            </tr>
+            <tr>
+                <td>shipped</td>
+                <td>Enviado</td>
+            </tr>
+        </table>
+
+        <div class="expected">
+            <strong>Esperado:</strong> <code>photo_sent</code> = "Aguardando Aprovacao da Cliente" | <code>photo_approved</code> = "Foto Aprovada"
+        </div>
+    </div>
+
+    <h2>Resumo dos Bugs Corrigidos</h2>
+    <table class="summary-table">
+        <tr>
+            <th>Bug</th>
+            <th>Descricao</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>BUG-01</td>
+            <td>Produtos CRUD nao funcionava</td>
+            <td><span class="status-fixed">CORRIGIDO</span></td>
+        </tr>
+        <tr>
+            <td>BUG-02</td>
+            <td>Produtos nao apareciam em /sales/create</td>
+            <td><span class="status-working">JA FUNCIONAVA</span></td>
+        </tr>
+        <tr>
+            <td>BUG-03</td>
+            <td>Vendedora nao podia editar venda</td>
+            <td><span class="status-working">JA FUNCIONAVA</span></td>
+        </tr>
+        <tr>
+            <td>BUG-04</td>
+            <td>Endereco nao salvava</td>
+            <td><span class="status-working">JA FUNCIONAVA</span></td>
+        </tr>
+        <tr>
+            <td>BUG-06</td>
+            <td>Erro ao registrar pagamento</td>
+            <td><span class="status-fixed">CORRIGIDO</span></td>
+        </tr>
+        <tr>
+            <td>BUG-07</td>
+            <td>Cancelar exigia senha admin</td>
+            <td><span class="status-fixed">CORRIGIDO</span></td>
+        </tr>
+        <tr>
+            <td>BUG-08</td>
+            <td>Redirecionamento errado apos cancelar</td>
+            <td><span class="status-fixed">CORRIGIDO</span></td>
+        </tr>
+        <tr>
+            <td>BUG-09/10</td>
+            <td>Progresso de pagamento 0%</td>
+            <td><span class="status-fixed">CORRIGIDO</span></td>
+        </tr>
+        <tr>
+            <td>BUG-11</td>
+            <td>Status inconsistente</td>
+            <td><span class="status-fixed">CORRIGIDO</span></td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p><strong>BBKits Inventory Management System</strong></p>
+        <p>Documento gerado em 10/04/2026</p>
+        <p class="no-print">Clique em "Imprimir / Salvar PDF" para gerar o arquivo PDF</p>
+    </div>
+</body>
+</html>
