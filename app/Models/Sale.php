@@ -450,10 +450,10 @@ class Sale extends Model
             'pending_payment' => '⏳ Aguardando Pagamento',
             'payment_approved' => '✅ Pagamento Aprovado',
             'in_production' => '🏭 Em Produção',
-            'photo_sent' => '📸 Foto Enviada para Aprovação',
-            'photo_approved' => '✨ Aguardando Aprovação da Cliente',
+            'photo_sent' => '📸 Aguardando Aprovação da Cliente',
+            'photo_approved' => '✨ Foto Aprovada',
             'pending_final_payment' => '🟠 Pagamento Final Pendente',
-            'ready_for_shipping' => '🔗 Pronto para Envio',
+            'ready_for_shipping' => '🚚 Pronto para Envio',
             'shipped' => '🎉 Enviado',
             'under_review' => '🔍 Em Revisão'
         ];
