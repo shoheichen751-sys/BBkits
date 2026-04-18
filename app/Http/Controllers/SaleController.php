@@ -55,6 +55,51 @@ class SaleController extends Controller
         }
     }
 
+    /**
+     * BUG-20: Validate Brazilian CPF with check digits
+     */
+    private function isValidCPF(?string $cpf): bool
+    {
+        if ($cpf === null || $cpf === '') {
+            return true; // CPF is optional
+        }
+
+        // Remove non-digits
+        $cpf = preg_replace('/\D/', '', $cpf);
+
+        // Must be exactly 11 digits
+        if (strlen($cpf) !== 11) {
+            return false;
+        }
+
+        // Check for known invalid CPFs (all same digits)
+        if (preg_match('/^(\d)\1{10}$/', $cpf)) {
+            return false;
+        }
+
+        // Validate first check digit
+        $sum = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $sum += (int) $cpf[$i] * (10 - $i);
+        }
+        $remainder = $sum % 11;
+        $digit1 = ($remainder < 2) ? 0 : 11 - $remainder;
+
+        if ((int) $cpf[9] !== $digit1) {
+            return false;
+        }
+
+        // Validate second check digit
+        $sum = 0;
+        for ($i = 0; $i < 10; $i++) {
+            $sum += (int) $cpf[$i] * (11 - $i);
+        }
+        $remainder = $sum % 11;
+        $digit2 = ($remainder < 2) ? 0 : 11 - $remainder;
+
+        return (int) $cpf[10] === $digit2;
+    }
+
     public function __construct(
         NotificationService $notificationService,
         CommissionService $commissionService,
@@ -167,9 +212,15 @@ class SaleController extends Controller
             // Client info - REQUIRED
             'client_name' => 'required|string|max:255',
             'client_email' => 'nullable|email|max:255',
-            'client_phone' => 'required|string|max:20',
-            'client_cpf' => 'nullable|string|max:14',
-            
+            // BUG-10: Brazilian phone validation - accepts (XX) XXXXX-XXXX, (XX) XXXX-XXXX, or just digits
+            'client_phone' => ['required', 'string', 'max:20', 'regex:/^(\(\d{2}\)\s?)?\d{4,5}-?\d{4}$/'],
+            // BUG-20: CPF validation with check digits
+            'client_cpf' => ['nullable', 'string', 'max:14', function ($attribute, $value, $fail) {
+                if ($value && !$this->isValidCPF($value)) {
+                    $fail('O CPF informado é inválido.');
+                }
+            }],
+
             // Product info - OPTIONAL (only for CreateExpanded form)
             'product_category' => 'nullable|exists:product_categories,id',
             'product_size' => 'nullable|in:P,M,G,GG',
@@ -327,12 +378,18 @@ class SaleController extends Controller
             // Client info - REQUIRED
             'client_name' => 'required|string|max:255',
             'client_email' => 'nullable|email|max:255',
-            'client_phone' => 'required|string|max:20',
-            'client_cpf' => 'nullable|string|max:14',
-            
+            // BUG-10: Brazilian phone validation
+            'client_phone' => ['required', 'string', 'max:20', 'regex:/^(\(\d{2}\)\s?)?\d{4,5}-?\d{4}$/'],
+            // BUG-20: CPF validation with check digits
+            'client_cpf' => ['nullable', 'string', 'max:14', function ($attribute, $value, $fail) {
+                if ($value && !$this->isValidCPF($value)) {
+                    $fail('O CPF informado é inválido.');
+                }
+            }],
+
             // Child name - REQUIRED
             'child_name' => 'required|string|max:255',
-            
+
             // BUG-07: Products - REQUIRED (at least one valid product)
             'products' => ['required', 'array', 'min:1', function ($attribute, $value, $fail) {
                 // Ensure at least one product has a valid product_id
@@ -1273,8 +1330,8 @@ class SaleController extends Controller
             'delivery_complement' => 'nullable|string|max:100',
             'delivery_neighborhood' => 'required|string|max:100',
             'delivery_city' => 'required|string|max:100',
-            'delivery_state' => 'required|string|max:2',
-            'delivery_zipcode' => 'required|string|max:10'
+            'delivery_state' => 'required|string|size:2', // BUG-05: Exact 2 chars for UF
+            'delivery_zipcode' => 'required|string|regex:/^\d{5}-?\d{3}$/' // BUG-05: Proper CEP format
         ]);
         
         $sale->update($validated);

@@ -20,10 +20,11 @@ class SalePaymentController extends Controller
         $pendingAmount = $sale->getTotalPendingAmount();
         $remainingAmount = $sale->getRemainingAmount();
 
-        
-        // Calculate progress and status based on approved payments only
+
+        // BUG-08 & BUG-16: Calculate progress and cap at 100% to prevent overflow
         $progress = $totalWithShipping > 0 ? ($approvedPaidAmount / $totalWithShipping) * 100 : 0;
-        
+        $progress = min($progress, 100); // Cap at 100%
+
         $status = 'unpaid';
         if ($approvedPaidAmount >= $totalWithShipping) {
             $status = 'fully_paid';

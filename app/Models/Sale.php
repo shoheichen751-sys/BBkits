@@ -443,7 +443,9 @@ class Sale extends Model
         if ($totalWithShipping <= 0) {
             return 0;
         }
-        return ($this->getTotalPaidAmount() / $totalWithShipping) * 100;
+        // BUG-08 & BUG-16: Cap progress at 100% to prevent UI overflow
+        $progress = ($this->getTotalPaidAmount() / $totalWithShipping) * 100;
+        return min($progress, 100);
     }
 
     public function getPaymentStatus(): string
