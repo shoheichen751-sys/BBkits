@@ -157,10 +157,16 @@ class SaleController extends Controller
             'embroidery_text' => 'nullable|string|max:255',
             
             // Payment - REQUIRED
-            'total_amount' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0.01', // BUG-18: Must be > 0
             'shipping_amount' => 'required|numeric|min:0',
             'payment_method' => 'required|in:pix,boleto,cartao,dinheiro',
-            'received_amount' => 'required|numeric|min:0',
+            'received_amount' => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                // BUG-19: received_amount cannot exceed total_amount + shipping_amount
+                $maxAmount = floatval($request->total_amount) + floatval($request->shipping_amount);
+                if (floatval($value) > $maxAmount) {
+                    $fail("O valor recebido não pode exceder o valor total (R$ " . number_format($maxAmount, 2, ',', '.') . ").");
+                }
+            }],
             'payment_date' => 'required|date',
             'payment_receipt' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
             
@@ -311,13 +317,19 @@ class SaleController extends Controller
             'products.*.embroidery_cost' => 'nullable|numeric|min:0',
             
             // Payment - REQUIRED
-            'total_amount' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0.01', // BUG-18: Must be > 0
             'shipping_amount' => 'required|numeric|min:0',
             'payment_method' => 'required|in:pix,boleto,cartao,dinheiro',
-            'received_amount' => 'required|numeric|min:0',
+            'received_amount' => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                // BUG-19: received_amount cannot exceed total_amount + shipping_amount
+                $maxAmount = floatval($request->total_amount) + floatval($request->shipping_amount);
+                if (floatval($value) > $maxAmount) {
+                    $fail("O valor recebido não pode exceder o valor total (R$ " . number_format($maxAmount, 2, ',', '.') . ").");
+                }
+            }],
             'payment_date' => 'required|date',
             'payment_receipt' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
-            
+
             // Delivery address - OPTIONAL (customer fills later)
             'delivery_address' => 'nullable|string|max:255',
             'delivery_number' => 'nullable|string|max:20',
@@ -505,10 +517,16 @@ class SaleController extends Controller
 
         $validated = $request->validate([
             'client_name' => 'required|string|max:255',
-            'total_amount' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0.01', // BUG-18: Must be > 0
             'shipping_amount' => 'required|numeric|min:0',
             'payment_method' => 'required|in:pix,boleto,cartao,dinheiro',
-            'received_amount' => 'required|numeric|min:0',
+            'received_amount' => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                // BUG-19: received_amount cannot exceed total_amount + shipping_amount
+                $maxAmount = floatval($request->total_amount) + floatval($request->shipping_amount);
+                if (floatval($value) > $maxAmount) {
+                    $fail("O valor recebido não pode exceder o valor total (R$ " . number_format($maxAmount, 2, ',', '.') . ").");
+                }
+            }],
             'payment_date' => 'required|date',
             'payment_receipt' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
             'notes' => 'nullable|string'
@@ -851,9 +869,15 @@ class SaleController extends Controller
     public function correct(Request $request, Sale $sale)
     {
         $validated = $request->validate([
-            'total_amount' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0.01', // BUG-18: Must be > 0
             'shipping_amount' => 'required|numeric|min:0',
-            'received_amount' => 'required|numeric|min:0',
+            'received_amount' => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                // BUG-19: received_amount cannot exceed total_amount + shipping_amount
+                $maxAmount = floatval($request->total_amount) + floatval($request->shipping_amount);
+                if (floatval($value) > $maxAmount) {
+                    $fail("O valor recebido não pode exceder o valor total (R$ " . number_format($maxAmount, 2, ',', '.') . ").");
+                }
+            }],
             'payment_date' => 'required|date',
             'correction_reason' => 'required|string|max:1000',
         ]);
