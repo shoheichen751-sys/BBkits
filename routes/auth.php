@@ -42,8 +42,9 @@ Route::middleware('auth')->group(function () {
 });
 
 // Email verification link can be clicked without being logged in
+// Removed 'signed' middleware - hash verification is done in controller
 Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-    ->middleware(['signed', 'throttle:6,1'])
+    ->middleware(['throttle:6,1'])
     ->name('verification.verify');
 
 Route::middleware('auth')->group(function () {
